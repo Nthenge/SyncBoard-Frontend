@@ -264,3 +264,5 @@ Registration → Email Sent with Link → User Clicks Link → Verify Token → 
 
 This project is licensed under the MIT License.
 
+#   S y n c B o a r d - F r o n t e n d  
+ 
