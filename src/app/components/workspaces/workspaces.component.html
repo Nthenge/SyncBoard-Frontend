@@ -1,65 +1,555 @@
 <div class="workspaces-container">
 
-  <!-- ── Nav ─────────────────────────────────────────────────────────── -->
-  <nav class="top-nav">
-    <div class="nav-left">
-      <span class="logo">📋 SyncBoard</span>
+  <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+  <aside class="ws-sidebar">
+
+    <!-- Top fixed section -->
+    <div class="sidebar-top-group">
+      <div class="sidebar-account">
+        <button
+          class="account-trigger"
+          [class.account-trigger--open]="accountMenuOpen()"
+          (click)="toggleAccountMenu()"
+        >
+          <span class="account-avatar">{{ getInitial(userName()) }}</span>
+          <span class="account-name">{{ userName() }}</span>
+          <span class="account-chevron">⌄</span>
+        </button>
+
+        <div class="account-menu-backdrop" *ngIf="accountMenuOpen()" (click)="closeAccountMenu()"></div>
+
+        <div class="account-menu" *ngIf="accountMenuOpen()" (click)="$event.stopPropagation()">
+          <div class="account-menu-header">
+            <span class="account-menu-avatar">{{ getInitial(userName()) }}</span>
+            <div class="account-menu-id">
+              <strong>{{ userName() }}</strong>
+              <span *ngIf="userEmail()">{{ userEmail() }}</span>
+            </div>
+          </div>
+
+          <div class="account-menu-section">
+            <button class="account-menu-item" (click)="closeAccountMenu()">
+              <span class="ami-icon">⚙</span> Settings
+            </button>
+            <button class="account-menu-item" (click)="closeAccountMenu()">
+              <span class="ami-icon">👥</span> Invite members
+            </button>
+          </div>
+
+          <div class="account-menu-divider"></div>
+
+          <button class="account-menu-item account-menu-item--danger" (click)="closeAccountMenu()" (click)="logout()">
+            <span class="ami-icon">⏻</span> Log out
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-search">
+        <span class="sidebar-search-icon">⌕</span>
+        <input
+          type="text"
+          placeholder="Find a workspace..."
+          [(ngModel)]="workspaceFilter"
+          (ngModelChange)="onFilterChange($event)"
+        >
+      </div>
     </div>
-    <div class="nav-right">
-      <span class="user-name">{{ userName() }}</span>
-      <app-user-menu></app-user-menu>
+
+    <!-- TOP HALF (50%): Workspaces List -->
+    <div class="sidebar-half sidebar-half--workspaces">
+      <div class="sidebar-section-row">
+        <span class="sidebar-section-label">Workspaces</span>
+        <span class="sidebar-count" *ngIf="workspaces().length">{{ workspaces().length }}</span>
+      </div>
+
+      <nav class="sidebar-ws-list" *ngIf="!loading()">
+        <a
+          class="sidebar-ws-item"
+          *ngFor="let ws of filteredWorkspaces()"
+          [class.sidebar-ws-item--active]="ws.id === activeWorkspaceId()"
+          (click)="selectWorkspace(ws.id)"
+          tabindex="0"
+          (keyup.enter)="selectWorkspace(ws.id)"
+        >
+          <span class="sidebar-ws-avatar">{{ getInitial(ws.workSpaceName) }}</span>
+          <span class="sidebar-ws-name">{{ ws.workSpaceName }}</span>
+        </a>
+
+        <p class="sidebar-empty-hint" *ngIf="workspaces().length && filteredWorkspaces().length === 0">
+          No matches for "{{ workspaceFilter }}"
+        </p>
+      </nav>
+
+      <div class="sidebar-skeleton" *ngIf="loading()">
+        <div class="sidebar-skeleton-row"></div>
+        <div class="sidebar-skeleton-row"></div>
+      </div>
+
+      <button class="sidebar-new-btn" (click)="openCreateModal()">
+        <span class="sidebar-new-plus">+</span> New workspace
+      </button>
+
+      <div class="sidebar-skeleton" *ngIf="loading()">
+        <div class="sidebar-skeleton-row"></div>
+        <div class="sidebar-skeleton-row"></div>
+      </div>
     </div>
-  </nav>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- BOTTOM HALF (50%): Quick Access & Invitations -->
+    <div class="sidebar-half sidebar-half--quickaccess">
+      <div class="sidebar-tab-bar">
+        <button
+          class="sidebar-tab"
+          [class.sidebar-tab--active]="activeQuickTab() === 'starred'"
+          (click)="activeQuickTab.set('starred')"
+          title="Starred Boards"
+        >⭐</button>
+        <button
+          class="sidebar-tab"
+          [class.sidebar-tab--active]="activeQuickTab() === 'recent'"
+          (click)="activeQuickTab.set('recent')"
+          title="Recent Boards"
+        >🕒</button>
+        <button
+          class="sidebar-tab"
+          [class.sidebar-tab--active]="activeQuickTab() === 'tasks'"
+          (click)="activeQuickTab.set('tasks')"
+          title="My Tasks"
+        >📥</button>
+        <button
+          class="sidebar-tab"
+          [class.sidebar-tab--active]="activeQuickTab() === 'due'"
+          (click)="activeQuickTab.set('due')"
+          title="Due Soon"
+        >⚡</button>
+        <button
+          class="sidebar-tab"
+          [class.sidebar-tab--active]="activeQuickTab() === 'invites'"
+          (click)="openInvitesTab()"
+          title="Workspace Invitations"
+        >📩</button>
+        <button
+          class="sidebar-tab"
+          [class.sidebar-tab--active]="activeQuickTab() === 'scratchpad'"
+          (click)="activeQuickTab.set('scratchpad')"
+          title="Scratchpad"
+        >📝</button>
+      </div>
+
+      <div class="tab-content">
+
+        <!-- Tab 1: Starred -->
+        <div *ngIf="activeQuickTab() === 'starred'" class="tab-panel">
+          <p class="panel-label">Starred Boards</p>
+          <div class="quick-list" *ngIf="starredBoards().length; else emptyStarred">
+            <a *ngFor="let board of starredBoards()" class="quick-item" (click)="openBoard(board)">
+              <span class="qi-star">★</span>
+              <span class="qi-text">{{ board.boardName }}</span>
+            </a>
+          </div>
+          <ng-template #emptyStarred>
+            <p class="sidebar-empty-hint">No starred boards yet.</p>
+          </ng-template>
+        </div>
+
+        <!-- Tab 2: Recent -->
+        <div *ngIf="activeQuickTab() === 'recent'" class="tab-panel">
+          <p class="panel-label">Recent Activity</p>
+          <div class="quick-list" *ngIf="recentBoards().length; else emptyRecent">
+            <a *ngFor="let b of recentBoards()" class="quick-item" (click)="openBoard(b)">
+              <span class="qi-dot"></span>
+              <span class="qi-text">{{ b.name }}</span>
+            </a>
+          </div>
+          <ng-template #emptyRecent>
+            <p class="sidebar-empty-hint">No recent activity.</p>
+          </ng-template>
+        </div>
+
+        <!-- Tab 3: My Tasks (Assigned to logged-in user) -->
+        <div *ngIf="activeQuickTab() === 'tasks'" class="tab-panel">
+          <p class="panel-label">Assigned to Me</p>
+          <div class="quick-list" *ngIf="myAssignedTasks().length; else emptyTasks">
+            <div class="quick-item" *ngFor="let card of myAssignedTasks()">
+              <span class="qi-check">☐</span>
+              <span class="qi-text">{{ card.title }}</span>
+            </div>
+          </div>
+          <ng-template #emptyTasks>
+            <p class="sidebar-empty-hint">No cards assigned to you.</p>
+          </ng-template>
+        </div>
+
+        <!-- Tab 4: Due Soon -->
+        <div *ngIf="activeQuickTab() === 'due'" class="tab-panel">
+          <p class="panel-label">Due in 48 Hours</p>
+          <div class="quick-list" *ngIf="dueSoonTasks().length; else emptyDue">
+            <div class="quick-item warning" *ngFor="let card of dueSoonTasks()">
+              <span class="qi-icon">⏳</span>
+              <span class="qi-text">{{ card.title }} ({{ card.dueDate | date:'shortDate' }})</span>
+            </div>
+          </div>
+          <ng-template #emptyDue>
+            <p class="sidebar-empty-hint">No tasks due soon.</p>
+          </ng-template>
+        </div>
+
+        <!-- Tab 5: Workspace Invitations -->
+        <div *ngIf="activeQuickTab() === 'invites'" class="tab-panel">
+        <p class="panel-label">Pending Invitations</p>
+        <div class="quick-list" *ngIf="pendingInvites().length; else emptyInvites">
+          <div class="invite-card" *ngFor="let invite of pendingInvites()">
+            <div class="invite-info">
+              <strong>{{ invite.workspaceName }}</strong>
+            </div>
+            <div class="invite-actions">
+              <button class="btn-accept" (click)="acceptInvitation(invite.token)">Accept</button>
+              <button class="btn-reject" (click)="rejectInvitation(invite.token)">Decline</button>
+            </div>
+          </div>
+        </div>
+        <ng-template #emptyInvites>
+          <p class="sidebar-empty-hint">No pending workspace invites.</p>
+        </ng-template>
+      </div>
+
+        <!-- Tab 6: Scratchpad -->
+        <div *ngIf="activeQuickTab() === 'scratchpad'" class="tab-panel scratchpad-panel">
+          <p class="panel-label">Daily Scratchpad</p>
+          <textarea
+            class="scratchpad-input"
+            placeholder="Jot down quick thoughts or meeting notes..."
+            [(ngModel)]="scratchpadText"
+          ></textarea>
+        </div>
+
+      </div>
+    </div>
+
+  </aside>
 
   <!-- ── Main ─────────────────────────────────────────────────────────── -->
-  <main class="main-content">
-    <div class="page-header">
-      <div>
-        <h1>My Workspaces</h1>
-        <p class="subtitle">Select a workspace to view its boards</p>
+  <main class="ws-main">
+
+  <header class="ws-topbar">
+  <div>
+    <h1>Workspaces</h1>
+    <!-- <p class="ws-topbar-sub" *ngIf="!loading()">
+      {{ workspaces().length }} workspace{{ workspaces().length !== 1 ? 's' : '' }}
+    </p> -->
+  </div>
+
+  <div class="ws-topbar-actions">
+    <button class="icon-btn" (click)="openNotifications()" aria-label="Notifications">
+      <span class="icon-btn-glyph">🔔</span>
+    </button>
+    <button class="icon-btn" (click)="openSettings()" aria-label="Settings">
+      <span class="icon-btn-glyph">⚙</span>
+    </button>
+    <button class="btn-create" (click)="openCreateModal()">
+      + New workspace
+    </button>
+  </div>
+</header>
+
+<div class="ws-split">
+
+  <!-- LEFT: everything you already had -->
+  <div class="ws-split-left">
+
+    <div class="stats-bar" *ngIf="!loading() && workspaces().length > 0">
+      <div class="stat-chip">
+        <span class="stat-value">{{ workspaces().length }}</span>
+        <span class="stat-label">Workspace{{ workspaces().length !== 1 ? 's' : '' }}</span>
       </div>
-      <button class="btn-create" (click)="openCreateModal()">
-        + New Workspace
+      <div class="stat-chip">
+        <span class="stat-value">{{ totalMembers() }}</span>
+        <span class="stat-label">Team seat{{ totalMembers() !== 1 ? 's' : '' }}</span>
+      </div>
+      <div class="stat-chip" *ngIf="recentBoards().length">
+        <span class="stat-value">{{ recentBoards().length }}</span>
+        <span class="stat-label">Recent board{{ recentBoards().length !== 1 ? 's' : '' }}</span>
+      </div>
+    </div>
+
+    <section class="recent-section" *ngIf="!loading() && recentBoards().length">
+      <p class="recent-heading">Jump back in</p>
+      <div class="recent-strip">
+        <button class="recent-card" *ngFor="let board of recentBoards()" (click)="openBoard(board)">
+          <span class="recent-card-dot"></span>
+          <span class="recent-card-name">{{ board.name }}</span>
+          <span class="recent-card-meta">{{ board.workspaceName }}</span>
+        </button>
+      </div>
+    </section>
+
+    <div class="loading" *ngIf="loading()">
+      <div class="spinner"></div>
+      <p>Loading workspaces…</p>
+    </div>
+
+    <div class="workspace-grid-scroll" *ngIf="!loading()">
+  <div class="workspace-grid">
+
+    <div class="workspace-card"
+         *ngFor="let ws of workspaces()"
+         [class.workspace-card--active]="ws.id === activeWorkspaceId()"
+         tabindex="0"
+         (click)="selectWorkspace(ws.id)"
+         (keyup.enter)="selectWorkspace(ws.id)">
+
+      <div class="wc-titlebar">
+        <div class="wc-avatar">{{ getInitial(ws.workSpaceName) }}</div>
+        <span class="wc-name">{{ ws.workSpaceName }}</span>
+
+        <button class="wc-star" [class.wc-star--active]="isPinned(ws)" (click)="togglePin(ws, $event)"
+          [attr.aria-label]="isPinned(ws) ? 'Unpin workspace' : 'Pin workspace'">{{ isPinned(ws) ? '★' : '☆' }}</button>
+
+        <div class="wc-menu-wrap">
+          <button class="wc-kebab" (click)="toggleCardMenu(ws.id, $event)" aria-label="Workspace options">⋯</button>
+          <div class="wc-menu-backdrop" *ngIf="cardMenuOpenId() === ws.id" (click)="closeCardMenuBackdrop($event)"></div>
+          <div class="wc-menu" *ngIf="cardMenuOpenId() === ws.id" (click)="$event.stopPropagation()">
+            <button class="wc-menu-item" (click)="renameWorkspace(ws, $event)">Rename</button>
+            <button class="wc-menu-item" (click)="openWorkspaceSettings(ws, $event)">Workspace settings</button>
+            <div class="wc-menu-divider"></div>
+            <button class="wc-menu-item wc-menu-item--danger" (click)="leaveWorkspace(ws, $event)">Leave workspace</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="wc-body">
+        <p class="wc-desc" *ngIf="ws.workSpaceDescription">{{ ws.workSpaceDescription }}</p>
+        <p class="wc-desc no-desc" *ngIf="!ws.workSpaceDescription">No description yet</p>
+
+        <div class="wc-meta-row">
+          <span class="role-badge" [class.role-badge--owner]="getRole(ws) === 'Admin'">{{ getRole(ws) }}</span>
+          <div class="wc-avatar-stack" *ngIf="ws.members?.length">
+            <span class="wc-member-avatar" *ngFor="let member of getVisibleMembers(ws)" [title]="getMemberLabel(member)">{{ getMemberInitial(member) }}</span>
+            <span class="wc-member-avatar wc-member-avatar--extra" *ngIf="getExtraMemberCount(ws) > 0">+{{ getExtraMemberCount(ws) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="wc-footer">
+        <span class="member-count" *ngIf="getLastActivityLabel(ws) as activity">{{ activity }}</span>
+        <span class="member-count" *ngIf="!getLastActivityLabel(ws)">
+          {{ ws.members?.length ? (ws.members.length + ' member' + (ws.members.length !== 1 ? 's' : '')) : '' }}
+        </span>
+        <span class="ws-arrow">→</span>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="workspaces().length === 0">
+      <div class="empty-icon">🗂️</div>
+      <h3>No workspaces yet</h3>
+      <p>Create a workspace, invite your team, then start building boards together.</p>
+      <button class="btn-create" (click)="openCreateModal()">+ Create workspace</button>
+    </div>
+
+  </div>
+</div>
+
+  </div>
+
+  <!-- RIGHT: detail panel for the selected workspace -->
+  <aside class="ws-detail-panel" *ngIf="!loading()">
+  <ng-container *ngIf="selectedWorkspace() as ws; else noSelection">
+
+    <div class="detail-header">
+      <div class="detail-heading-group">
+        <div class="detail-avatar">{{ getInitial(ws.workSpaceName) }}</div>
+        <div class="detail-heading">
+          <h2>{{ ws.workSpaceName }}</h2>
+          <span class="role-badge" [class.role-badge--owner]="getRole(ws) === 'Admin'">{{ getRole(ws) }}</span>
+        </div>
+      </div>
+
+      <button class="btn-expand" (click)="openWorkspace(ws.id)">
+        Expand board <span class="expand-arrow">→</span>
       </button>
     </div>
 
-    <!-- Loading -->
-    <div class="loading" *ngIf="loading()">
-      <div class="spinner"></div>
-      <p>Loading workspaces...</p>
-    </div>
+    <p class="detail-desc" *ngIf="ws.workSpaceDescription">{{ ws.workSpaceDescription }}</p>
+    <p class="detail-desc no-desc" *ngIf="!ws.workSpaceDescription">No description yet</p>
 
-    <!-- Workspace grid -->
-    <div class="workspace-grid" *ngIf="!loading()">
+    <!-- Boards in this workspace -->
+     <div class="detail-section detail-section--boards">
+  <div class="detail-section-header">
+    <span class="detail-section-label">Boards</span>
+    <span class="detail-section-count" *ngIf="workspaceBoards().length">{{ workspaceBoards().length }}</span>
+  </div>
 
-      <div
-        class="workspace-card"
-        *ngFor="let ws of workspaces()"
-        (click)="openWorkspace(ws.id)"
-      >
-        <div class="ws-avatar">{{ getInitial(ws.workSpaceName) }}</div>
-        <div class="ws-info">
-          <h3>{{ ws.workSpaceName }}</h3>
-          <p *ngIf="ws.workSpaceDescription">{{ ws.workSpaceDescription }}</p>
-          <p *ngIf="!ws.workSpaceDescription" class="no-desc">No description</p>
-          <span class="member-count" *ngIf="ws.members?.length">
-            {{ ws.members.length }} member{{ ws.members.length !== 1 ? 's' : '' }}
-          </span>
+  <div class="detail-boards-loading" *ngIf="boardsLoading()">
+    <div class="spinner spinner--sm"></div>
+  </div>
+
+  <div class="detail-boards-scroll" *ngIf="!boardsLoading()">
+    <div class="detail-board-grid">
+
+      <div class="detail-board-card"
+           [class.detail-board-card--active]="board.id === selectedBoardId()"
+           *ngFor="let board of workspaceBoards()"
+           (click)="selectBoard(board)">
+        <div class="dbc-titlebar">
+          <span class="dbc-avatar">{{ getInitial(board.boardName) }}</span>
+          <span class="dbc-name">{{ board.boardName }}</span>
         </div>
-        <span class="ws-arrow">→</span>
+        <div class="dbc-body">
+          <p class="dbc-desc" *ngIf="board.boardDescription">{{ board.boardDescription }}</p>
+          <p class="dbc-desc no-desc" *ngIf="!board.boardDescription">No description yet</p>
+        </div>
       </div>
 
-      <!-- Empty state -->
-      <div class="empty-state" *ngIf="workspaces().length === 0">
-        <div class="empty-icon">🗂️</div>
-        <h3>No workspaces yet</h3>
-        <p>Create a workspace, invite your team, then start building boards together.</p>
-        <button class="btn-create" (click)="openCreateModal()">
-          + Create Workspace
+    </div>
+  </div>
+
+  <div class="detail-boards-empty" *ngIf="!boardsLoading() && workspaceBoards().length === 0">
+    <p class="detail-empty-hint">No boards yet in this workspace.</p>
+  </div>
+
+  <button class="detail-boards-new-btn" *ngIf="!boardsLoading() && workspaceBoards().length > 0" (click)="openCreateBoardModal()">
+    <span class="ghost-plus">+</span> New board
+  </button>
+
+  <!-- Create board modal — unchanged -->
+  <div class="boards-modal-overlay" *ngIf="showCreateBoardModal()" (click)="closeCreateBoardModal()">
+    <div class="boards-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Create new board</h2>
+        <button class="btn-close" (click)="closeCreateBoardModal()" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Board name</label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="e.g. Marketing Plan, Sprint 1"
+            [(ngModel)]="newBoardTitle"
+            (keyup.enter)="createBoardInline()"
+            autofocus
+          >
+        </div>
+        <div class="error-msg" *ngIf="createBoardError()">{{ createBoardError() }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeCreateBoardModal()">Cancel</button>
+        <button
+          class="btn-confirm"
+          (click)="createBoardInline()"
+          [disabled]="!newBoardTitle.trim() || creatingBoard()"
+        >
+          {{ creatingBoard() ? 'Creating…' : 'Create board' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="detail-section" *ngIf="selectedBoard() as sb">
+  <div class="detail-section-header">
+    <span class="detail-section-label">{{ sb.boardName }}</span>
+  </div>
+
+  <div class="detail-lists-loading" *ngIf="listsLoading()">
+    <div class="spinner spinner--sm"></div>
+  </div>
+
+  <div class="detail-lists-row" *ngIf="!listsLoading() && boardLists().length">
+    <div class="detail-list-col"
+        [class.detail-list-col--active]="list.id === selectedListId()"
+        *ngFor="let list of boardLists()"
+        (click)="selectList(list)">
+      <div class="dlc-header">
+        <span class="dlc-name">{{ list.name }}</span>
+        <span class="dlc-count">{{ list.cards?.length || 0 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="detail-empty-hint" *ngIf="!listsLoading() && boardLists().length === 0">
+    No lists yet on this board.
+  </p>
+
+  <div class="detail-selected-list-cards" *ngIf="selectedListId() as slid">
+  <p class="detail-all-cards-heading">
+    {{ getSelectedListName() }}
+  </p>
+
+  <div class="detail-cards-scroll">
+    <div class="detail-card-chip" *ngFor="let card of selectedListCards()">
+      <div class="dcc-top">
+        <span class="dcc-title">{{ card.title }}</span>
+        <span class="dcc-priority" *ngIf="card.priority" [class]="'dcc-priority--' + card.priority.toLowerCase()">
+          {{ card.priority }}
+        </span>
+      </div>
+      <div class="dcc-meta">
+        <span class="dcc-assignee">
+          {{ card.assigneeName ? '👤 ' + card.assigneeName : 'Unassigned' }}
+        </span>
+        <span class="dcc-due" *ngIf="card.dueDate">
+          📅 {{ card.dueDate | date:'mediumDate' }}
+        </span>
+        <button class="dcc-reassign-btn" (click)="toggleReassignPicker(card, $event)">
+          Reassign
         </button>
       </div>
 
+      <div class="dcc-reassign-backdrop" *ngIf="reassigningCardId() === card.id" (click)="toggleReassignPicker(card, $event)"></div>
+
+      <div class="dcc-reassign-picker" *ngIf="reassigningCardId() === card.id" (click)="$event.stopPropagation()">
+        <button
+          *ngFor="let member of panelBoardMembers()"
+          class="dcc-reassign-option"
+          [class.selected]="member.userId === card.assigneeId"
+          [disabled]="isReassigningInPanel()"
+          (click)="reassignFromPanel(card, member, $event)"
+        >
+          {{ member.userFullName }}
+        </button>
+        <p class="detail-empty-hint" *ngIf="panelBoardMembers().length === 0">No board members found.</p>
+      </div>
     </div>
+  </div>
+
+  <p class="detail-empty-hint" *ngIf="selectedListCards().length === 0">
+    No cards in this list.
+  </p>
+</div>
+
+</div>
+
+<!-- Members and their roles -->
+<div class="detail-section">
+
+  <div class="detail-member-list" *ngIf="ws.members?.length">
+    <div class="detail-member-item" *ngFor="let member of ws.members">
+      <span class="wc-member-avatar">{{ getMemberInitial(member) }}</span>
+      <span class="detail-member-name">{{ getMemberLabel(member) }}</span>
+      <span class="role-badge" [class.role-badge--owner]="getMemberRole(member) === 'Admin'">{{ getMemberRole(member) }}</span>
+    </div>
+  </div>
+</div>
+
+  <div class="ws-detail-footer">
+    <span class="member-count">{{ ws.members?.length || 0 }} member{{ ws.members?.length !== 1 ? 's' : '' }}</span>
+    <span class="member-count">{{ getBoardsMemberSummary() }}</span>
+    <span class="member-count">{{ getBoardsLastActivitySummary() }}</span>
+  </div>
+
+  </ng-container>
+
+  <ng-template #noSelection>
+    <div class="detail-empty">
+      <p>Select a workspace to preview it here.</p>
+    </div>
+  </ng-template>
+</aside>
+
+</div>
   </main>
 
   <!-- ══════════════════════════════════════════════════════════════════
@@ -77,24 +567,24 @@
             <span *ngIf="modalStep() === 'create'">1</span>
             <span *ngIf="modalStep() === 'invite'">✓</span>
           </div>
-          <span class="step-label">Create Workspace</span>
+          <span class="step-label">Create</span>
         </div>
         <div class="step-line" [class.done]="modalStep() === 'invite'"></div>
         <div class="step" [class.active]="modalStep() === 'invite'">
           <div class="step-dot">2</div>
-          <span class="step-label">Invite Members</span>
+          <span class="step-label">Invite</span>
         </div>
       </div>
 
       <!-- ── STEP 1: Create Workspace ────────────────────────────── -->
       <ng-container *ngIf="modalStep() === 'create'">
         <div class="modal-header">
-          <h2>New Workspace</h2>
-          <button class="btn-close" (click)="closeModal()">×</button>
+          <h2>New workspace</h2>
+          <button class="btn-close" (click)="closeModal()" aria-label="Close">×</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>Workspace Name</label>
+            <label>Workspace name</label>
             <input
               type="text"
               class="form-input"
@@ -122,7 +612,7 @@
             (click)="createWorkspace()"
             [disabled]="!newWorkspaceName.trim() || creating()"
           >
-            {{ creating() ? 'Creating...' : 'Create & Continue →' }}
+            {{ creating() ? 'Creating…' : 'Create & continue →' }}
           </button>
         </div>
       </ng-container>
@@ -130,8 +620,8 @@
       <!-- ── STEP 2: Invite Members ──────────────────────────────── -->
       <ng-container *ngIf="modalStep() === 'invite'">
         <div class="modal-header">
-          <h2>Invite Members</h2>
-          <button class="btn-close" (click)="closeModal()">×</button>
+          <h2>Invite members</h2>
+          <button class="btn-close" (click)="closeModal()" aria-label="Close">×</button>
         </div>
 
         <div class="modal-body">
@@ -141,30 +631,47 @@
             <div class="ws-badge-avatar">{{ getInitial(ws.workSpaceName) }}</div>
             <div>
               <strong>{{ ws.workSpaceName }}</strong>
-              <p class="badge-sub">Invite team members to this workspace. They'll be able to create and collaborate on boards.</p>
+              <p class="badge-sub">Invite teammates to this workspace — they'll be able to create and collaborate on boards.</p>
             </div>
           </div>
 
           <!-- Invite form -->
-          <div class="invite-row">
-            <input
-              type="email"
-              class="form-input invite-email-input"
-              placeholder="colleague@company.com"
-              [(ngModel)]="inviteEmail"
-              (keyup.enter)="sendInvite()"
-            >
-            <select class="form-select" [(ngModel)]="inviteRole">
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-            </select>
-            <button
-              class="btn-send-invite"
-              (click)="sendInvite()"
-              [disabled]="!inviteEmail.trim() || sending()"
-            >
-              {{ sending() ? '...' : 'Send Invite' }}
-            </button>
+          <div class="form-group">
+            <label>Email</label>
+            <div class="invite-row">
+              <input
+                type="email"
+                class="form-input invite-email-input"
+                placeholder="colleague@company.com"
+                [(ngModel)]="inviteEmail"
+                (keyup.enter)="sendInvite()"
+              >
+              <button
+                class="btn-send-invite"
+                (click)="sendInvite()"
+                [disabled]="!inviteEmail.trim() || sending()"
+              >
+                {{ sending() ? 'Sending…' : 'Send invite' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Role</label>
+            <div class="role-picker">
+              <button
+                type="button"
+                class="chip-option"
+                [class.chip-option--active]="inviteRole === 'member'"
+                (click)="inviteRole = 'member'"
+              >Member</button>
+              <button
+                type="button"
+                class="chip-option"
+                [class.chip-option--active]="inviteRole === 'admin'"
+                (click)="inviteRole = 'admin'"
+              >Admin</button>
+            </div>
           </div>
 
           <!-- Feedback messages -->
@@ -177,7 +684,7 @@
             <div class="invited-chip" *ngFor="let email of invitedEmails()">
               <span class="chip-dot">✉</span>
               <span class="chip-email">{{ email }}</span>
-              <span class="chip-status">Pending</span>
+              <button class="chip-remove" (click)="removeInvitedEmail(email)" aria-label="Remove">×</button>
             </div>
           </div>
 
@@ -197,7 +704,7 @@
             class="btn-confirm"
             (click)="finishAndGoToBoards()"
           >
-            {{ invitedEmails().length > 0 ? 'Done → Go to Boards' : 'Go to Boards →' }}
+            {{ invitedEmails().length > 0 ? 'Done → Go to boards' : 'Go to boards →' }}
           </button>
         </div>
       </ng-container>

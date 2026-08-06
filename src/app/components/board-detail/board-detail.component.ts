@@ -189,9 +189,9 @@ export class BoardDetailComponent implements OnInit {
   }
 
   saveBoardName(): void {
-    const boardId = this.board()?.id;
-    if (!boardId || !this.boardNameEdit.trim()) return;
-    this.boardService.updateBoard(boardId, { boardName: this.boardNameEdit.trim() }).subscribe({
+  const boardId = this.board()?.id;
+  if (!boardId || !this.boardNameEdit.trim()) return;
+  this.boardService.updateBoard(String(boardId), { boardName: this.boardNameEdit.trim() }).subscribe({
       next: (updated) => {
         this.board.set(updated);
         this.editingBoardName.set(false);
@@ -206,10 +206,10 @@ export class BoardDetailComponent implements OnInit {
   }
 
   deleteBoard(): void {
-    const boardId = this.board()?.id;
-    if (!boardId) return;
-    if (!confirm('Are you sure you want to delete this board?')) return;
-    this.boardService.deleteBoard(boardId).subscribe({
+  const boardId = this.board()?.id;
+  if (!boardId) return;
+  if (!confirm('Are you sure you want to delete this board?')) return;
+  this.boardService.deleteBoard(String(boardId)).subscribe({
       next: () => this.router.navigate(['/boards']),
       error: () => {}
     });
@@ -253,16 +253,15 @@ export class BoardDetailComponent implements OnInit {
 
 
   onSaveCard(updatedCard: Card): void {
-    this.cardService.updateCard(updatedCard.id, {
-      title: updatedCard.title,
-      description: updatedCard.description,
-      labels: updatedCard.labels
-    }).subscribe(() => this.closeCardModal());
-  }
+  this.cardService.updateCard(String(updatedCard.id), {
+    title: updatedCard.title,
+    description: updatedCard.description
+  }).subscribe(() => this.closeCardModal());
+}
 
-  onDeleteCard(cardId: string): void {
-    this.cardService.deleteCard(cardId).subscribe(() => this.closeCardModal());
-  }
+  onDeleteCard(cardId: string | number): void {
+  this.cardService.deleteCard(String(cardId)).subscribe(() => this.closeCardModal());
+}
 
   //  Drag and Drop 
 
@@ -289,10 +288,10 @@ export class BoardDetailComponent implements OnInit {
           return list;
         }));
         this.cardService.moveCard({
-          cardId: destCards[event.currentIndex]?.id,
-          targetListId,
-          newIndex: event.currentIndex
-        }).subscribe();
+        cardId: String(destCards[event.currentIndex]?.id ?? ''),
+        targetListId,
+        newIndex: event.currentIndex
+      }).subscribe();
       }
     }
   }
@@ -313,7 +312,7 @@ export class BoardDetailComponent implements OnInit {
       const boardId = this.board()?.id || '';
       if (!boardId) return;
 
-      this.listService.createList({ name: this.newListName.trim(), boardId }).subscribe({
+      this.listService.createList({ name: this.newListName.trim(), boardId: String(boardId) }).subscribe({
         next: (newList) => {
           this.newListName = '';
           this.showNewListInput.set(false);

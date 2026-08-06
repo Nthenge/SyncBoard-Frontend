@@ -9,7 +9,8 @@ import {
   WorkspaceMember,
   WorkspaceInvitation,
   SendWorkspaceInvitationRequest,
-  WorkspaceInvitationResponse
+  WorkspaceInvitationResponse,
+  MyInvitation
 } from '../models/board.models';
 
 @Injectable({
@@ -97,4 +98,46 @@ inviteMember(request: SendWorkspaceInvitationRequest): Observable<WorkspaceInvit
       {}
     );
   }
+
+  // UPDATE: Match backend path /workspace/accept-invite?token=...
+acceptInvite(token: string): Observable<any> {
+  return this.http.post<any>(
+    `${this.base}/workspace/accept-invite`,
+    {},
+    { params: { token } }
+  );
+}
+
+// UPDATE: Match backend path /workspace/reject-invite?token=...
+rejectInvite(token: string): Observable<any> {
+  return this.http.post<any>(
+    `${this.base}/workspace/reject-invite`,
+    {},
+    { params: { token } }
+  );
+}
+
+// UPDATE: Match backend endpoint GET /workspace/{workspaceId}/invitations
+getWorkspaceInvitations(workspaceId: string | number): Observable<WorkspaceInvitation[]> {
+  return this.http.get<any>(
+    `${this.base}/workspace/${workspaceId}/invitations`
+  ).pipe(map(response => response.data ?? response));
+}
+
+// UPDATE: Match backend endpoint DELETE /workspace/invitations/{invitationId}
+deleteInvitation(invitationId: string | number): Observable<void> {
+  return this.http.delete<void>(
+    `${this.base}/workspace/invitations/${invitationId}`
+  );
+}
+
+getMyInvitations(): Observable<MyInvitation[]> {
+  return this.http.get<any>(`${this.base}/workspace/my-invitations`).pipe(
+    map(response => response.data ?? response)
+  );
+}
+
+rejectInvitation(token: string): Observable<any> {
+  return this.rejectInvite(token);
+}
 }

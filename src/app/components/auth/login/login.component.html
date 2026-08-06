@@ -1,91 +1,87 @@
-<div class="login-container">
+@if (!isModal) {
+  <div class="login-page">
+    <a routerLink="/" class="login-brand">
+      <span class="brand-mark">S</span>
+      <span>SyncBoard</span>
+    </a>
+    <div class="login-card">
+      <ng-container *ngTemplateOutlet="formContent"></ng-container>
+    </div>
+  </div>
+} @else {
   <div class="login-card">
+    <button type="button" class="modal-close" (click)="closeModal.emit()" aria-label="Close">✕</button>
+    <ng-container *ngTemplateOutlet="formContent"></ng-container>
+  </div>
+}
 
-    <!-- Welcome back message for logged-in users -->
-    @if (isLoggedIn()) {
-      <div class="welcome-back">
-        <div class="welcome-icon">👋</div>
-        <h2>Welcome back, {{ userName() }}!</h2>
-        <p>You're already logged in to SyncBoard</p>
-        
-        <div class="user-info">
-          <div class="user-avatar">
-            {{ userName().charAt(0).toUpperCase() }}
-          </div>
-          <div class="user-details">
-            <span class="user-name">{{ userName() }}</span>
-            <span class="user-status">Logged in</span>
-          </div>
-        </div>
+<ng-template #formContent>
+  @if (isLoggedIn()) {
+    <div class="welcome-back">
+      <div class="welcome-icon">👋</div>
+      <h2>Welcome back, {{ userName() }}!</h2>
+      <p>You're already logged in to SyncBoard</p>
 
-        <div class="action-buttons">
-          <button class="btn-primary" routerLink="/boards">
-            Go to Dashboard
-          </button>
-          <button class="btn-secondary" (click)="logout()">
-            Sign Out
-          </button>
+      <div class="user-info">
+        <div class="user-avatar">{{ userName().charAt(0).toUpperCase() }}</div>
+        <div class="user-details">
+          <span class="user-name">{{ userName() }}</span>
+          <span class="user-status">Logged in</span>
         </div>
       </div>
-    } @else {
-      <!-- Regular login form for non-logged-in users -->
-      <h2>Welcome Back</h2>
-      <p>Sign in to SyncBoard</p>
 
-      @if (error()) {
-        <div class="error-message">{{ error() }}</div>
+      <div class="action-buttons">
+        <button class="btn-primary" routerLink="/boards" (click)="closeModal.emit()">Go to Dashboard</button>
+        <button class="btn-secondary" (click)="logout()">Sign Out</button>
+      </div>
+    </div>
+  } @else {
+    <div class="login-header">
+      <span class="login-eyebrow">Welcome back</span>
+      <h2>Sign In</h2>
+      <p>Pick up right where your team left off.</p>
+    </div>
+
+    @if (error()) { <div class="error-message">{{ error() }}</div> }
+    @if (successMessage()) { <div class="success-message">{{ successMessage() }}</div> }
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" placeholder="you@example.com">
+        @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+          <small>Please enter a valid email</small>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" placeholder="••••••••">
+      </div>
+
+      <button type="submit" [disabled]="loginForm.invalid || loading()" [class.loading]="loading()">
+        @if (loading()) {
+          <span class="btn-spinner"></span> Signing in...
+        } @else {
+          Sign In
+        }
+      </button>
+    </form>
+
+    <p class="register-link">
+      Don't have an account?
+      @if (isModal) {
+        <a (click)="switchToRegister.emit()">Sign up</a>
+      } @else {
+        <a routerLink="/register">Sign up</a>
       }
-
-      @if (successMessage()) {
-        <div class="success-message">{{ successMessage() }}</div>
-      }
-
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input 
-            id="email" 
-            type="email" 
-            formControlName="email"
-            placeholder="you@example.com">
-          
-
-          @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
-            <small>Please enter a valid email</small>
-          }
-        </div>
-
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input 
-            id="password" 
-            type="password" 
-            formControlName="password"
-            placeholder="••••••••"
-          >
-        </div>
-
-        <button 
-          type="submit" 
-          [disabled]="loginForm.invalid || loading()"
-          [class.loading]="loading()"
-        >
-          @if (loading()) {
-            <span class="btn-spinner"></span>
-            Signing in...
-          } @else {
-            Sign In
-          }
-        </button>
-      </form>
-
-      <p class="register-link">
-        Don't have an account? <a routerLink="/register">Sign up</a>
-      </p>
-      
-      <p class="forgot-password-link">
+    </p>
+    <p class="forgot-password-link">
+      @if (isModal) {
+        <a (click)="switchToForgot.emit()">Forgot your password?</a>
+      } @else {
         <a routerLink="/forgot-password">Forgot your password?</a>
-      </p>
-    }
-  </div>
-</div>
+      }
+    </p>
+  }
+</ng-template>

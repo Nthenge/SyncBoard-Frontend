@@ -1,135 +1,134 @@
-<div class="register-container">
-  <div class="register-card">
-    <h2>Create Account</h2>
-    <p>Sign up for SyncBoard</p>
-
-    @if (error()) {
-      <div class="error-message">{{ error() }}</div>
-    }
-
-    @if (successMessage()) {
-      <div class="success-message">{{ successMessage() }}</div>
-    }
-
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-      <div class="name-row">
-        <div class="form-group">
-          <label for="sirName">Sir Name</label>
-          <input id="sirName" type="text" formControlName="sirName" placeholder="Sir name">
-          @if (sirName?.invalid && sirName?.touched) {
-            <small>Sir name is required (min 2 characters)</small>
-          }
-        </div>
-
-        <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input id="firstName" type="text" formControlName="firstName" placeholder="First name">
-          @if (firstName?.invalid && firstName?.touched) {
-            <small>First name is required (min 2 characters)</small>
-          }
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input id="email" type="email" formControlName="email" placeholder="you@example.com">
-        @if (email?.invalid && email?.touched) {
-          <small>Please enter a valid email address</small>
-        }
-      </div>
-
-      <div class="form-group">
-        <label for="password">Password</label>
-        <div class="password-input-container">
-          <input 
-            id="password" 
-            [type]="showPassword() ? 'text' : 'password'" 
-            formControlName="password" 
-            placeholder="********"
-          >
-          <button 
-            type="button" 
-            class="password-toggle" 
-            (click)="togglePasswordVisibility()"
-          >
-            @if (showPassword()) {
-              👁️
-            } @else {
-              👁️‍🗨️
-            }
-          </button>
-        </div>
-        
-        @if (password?.value?.length > 0) {
-          <div class="password-strength">
-            <div class="strength-bar">
-              <div 
-                class="strength-fill" 
-                [class]="passwordStrength().level"
-                [style.width.%]="passwordStrength().strength"
-              ></div>
-            </div>
-            <span class="strength-text" [class]="passwordStrength().level">
-              {{ passwordStrength().level }}
-            </span>
-          </div>
-          
-          <ul class="password-requirements">
-            <li [class.met]="passwordStrength().requirements.minLength">✓ 8+ chars</li>
-            <li [class.met]="passwordStrength().requirements.hasLowercase">✓ lowercase</li>
-            <li [class.met]="passwordStrength().requirements.hasUppercase">✓ UPPERCASE</li>
-            <li [class.met]="passwordStrength().requirements.hasNumber">✓ number</li>
-            <li [class.met]="passwordStrength().requirements.hasSpecial">✓ special (@$!)</li>
-          </ul>
-        }
-        
-        @if (password?.invalid && password?.touched) {
-          <small>Meet all requirements</small>
-        }
-      </div>
-
-      <div class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
-        <div class="password-input-container">
-          <input 
-            id="confirmPassword" 
-            [type]="showConfirmPassword() ? 'text' : 'password'" 
-            formControlName="confirmPassword" 
-            placeholder="********"
-          >
-          <button 
-            type="button" 
-            class="password-toggle" 
-            (click)="toggleConfirmPasswordVisibility()"
-          >
-            @if (showConfirmPassword()) {
-              👁️
-            } @else {
-              👁️‍🗨️
-            }
-          </button>
-        </div>
-        @if (confirmPassword?.invalid && confirmPassword?.touched) {
-          <small>Please confirm your password</small>
-        }
-        @if (confirmPassword?.errors?.['passwordMismatch'] && confirmPassword?.touched) {
-          <small>Passwords do not match</small>
-        }
-      </div>
-
-      <button type="submit" [disabled]="registerForm.invalid || loading()" [class.loading]="loading()">
-        @if (loading()) {
-          <span class="btn-spinner"></span>
-          Creating Account...
-        } @else {
-          Create Account
-        }
-      </button>
-    </form>
-
-    <p class="login-link">
-      Already have an account? <a routerLink="/login">Sign in</a>
-    </p>
+@if (!isModal) {
+  <div class="register-page">
+    <a routerLink="/" class="register-brand">
+      <span class="brand-mark">S</span>
+      <span>SyncBoard</span>
+    </a>
+    <div class="register-card">
+      <ng-container *ngTemplateOutlet="formContent"></ng-container>
+    </div>
   </div>
-</div>
+} @else {
+  <div class="register-card">
+    <button type="button" class="modal-close" (click)="closeModal.emit()" aria-label="Close">✕</button>
+    <ng-container *ngTemplateOutlet="formContent"></ng-container>
+  </div>
+}
 
+<ng-template #formContent>
+  <div class="register-header">
+    <span class="register-eyebrow">Join syncboard</span>
+    <h2>Create Account</h2>
+    <p>Set up your team's workspace in under a minute.</p>
+  </div>
+
+  @if (error()) {
+    <div class="error-message">{{ error() }}</div>
+  }
+
+  @if (successMessage()) {
+    <div class="success-message">{{ successMessage() }}</div>
+  }
+
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <div class="name-row">
+      <div class="form-group">
+        <label for="sirName">Sir Name</label>
+        <input id="sirName" type="text" formControlName="sirName" placeholder="Sir name">
+        @if (sirName?.invalid && sirName?.touched) {
+          <small>Sir name is required (min 2 characters)</small>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input id="firstName" type="text" formControlName="firstName" placeholder="First name">
+        @if (firstName?.invalid && firstName?.touched) {
+          <small>First name is required (min 2 characters)</small>
+        }
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input id="email" type="email" formControlName="email" placeholder="you@example.com">
+      @if (email?.invalid && email?.touched) {
+        <small>Please enter a valid email address</small>
+      }
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      <div class="password-input-container">
+        <input
+          id="password"
+          [type]="showPassword() ? 'text' : 'password'"
+          formControlName="password"
+          placeholder="********">
+        <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
+          @if (showPassword()) { 👁️ } @else { 👁️‍🗨️ }
+        </button>
+      </div>
+
+      @if (password?.value?.length > 0) {
+        <div class="password-strength">
+          <div class="strength-bar">
+            <div class="strength-fill" [class]="passwordStrength().level" [style.width.%]="passwordStrength().strength"></div>
+          </div>
+          <span class="strength-text" [class]="passwordStrength().level">
+            {{ passwordStrength().level }}
+          </span>
+        </div>
+
+        <ul class="password-requirements">
+          <li [class.met]="passwordStrength().requirements.minLength">✓ 8+ chars</li>
+          <li [class.met]="passwordStrength().requirements.hasLowercase">✓ lowercase</li>
+          <li [class.met]="passwordStrength().requirements.hasUppercase">✓ UPPERCASE</li>
+          <li [class.met]="passwordStrength().requirements.hasNumber">✓ number</li>
+          <li [class.met]="passwordStrength().requirements.hasSpecial">✓ special (@&#64;$!)</li>
+        </ul>
+      }
+
+      @if (password?.invalid && password?.touched) {
+        <small>Meet all requirements</small>
+      }
+    </div>
+
+    <div class="form-group">
+      <label for="confirmPassword">Confirm Password</label>
+      <div class="password-input-container">
+        <input
+          id="confirmPassword"
+          [type]="showConfirmPassword() ? 'text' : 'password'"
+          formControlName="confirmPassword"
+          placeholder="********">
+        <button type="button" class="password-toggle" (click)="toggleConfirmPasswordVisibility()">
+          @if (showConfirmPassword()) { 👁️ } @else { 👁️‍🗨️ }
+        </button>
+      </div>
+      @if (confirmPassword?.invalid && confirmPassword?.touched) {
+        <small>Please confirm your password</small>
+      }
+      @if (confirmPassword?.errors?.['passwordMismatch'] && confirmPassword?.touched) {
+        <small>Passwords do not match</small>
+      }
+    </div>
+
+    <button type="submit" [disabled]="registerForm.invalid || loading()" [class.loading]="loading()">
+      @if (loading()) {
+        <span class="btn-spinner"></span> Creating Account...
+      } @else {
+        Create Account
+      }
+    </button>
+  </form>
+
+  <p class="login-link">
+    Already have an account?
+    @if (isModal) {
+      <a (click)="switchToLogin.emit()">Sign in</a>
+    } @else {
+      <a routerLink="/login">Sign in</a>
+    }
+  </p>
+</ng-template>

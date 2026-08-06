@@ -29,15 +29,25 @@ constructor(private http: HttpClient) {
    * Get all lists for a board
    */
 getLists(boardId: string): Observable<BoardList[]> {
-    if (this.useMockData) {
-      // Return empty lists - user creates their own
-      return of([]).pipe(delay(300));
-    }
-
-    return this.http.get<BoardList[]>(
-      `${environment.apiUrl}${environment.api.basePath}/boards/${boardId}/lists`
-    );
+  if (this.useMockData) {
+    return of([]).pipe(delay(300));
   }
+
+  return this.http.get<any>(
+    `${environment.apiUrl}${environment.api.basePath}/boards/${boardId}/lists`
+  ).pipe(
+    map(response => {
+      const raw = response?.data ?? response ?? [];
+      return (Array.isArray(raw) ? raw : []).map((l: any) => ({
+        id: l.id,
+        name: l.title,
+        order: l.position,
+        boardId: l.boardId,
+        cards: []
+      } as BoardList));
+    })
+  );
+}
 
   /**
    * Create a new list

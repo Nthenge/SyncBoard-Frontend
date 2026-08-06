@@ -62,8 +62,23 @@ export interface WorkspaceInvitationResponse {
 
 //  Label 
 
+export type CardPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+
 export interface Label {
-  id: string;
+  id: string | number;
+  name: string;
+  color: string;
+  boardId?: string | number;
+}
+
+export interface MyInvitation {
+  token: string;
+  workspaceName: string;
+  expiryDate: string;
+}
+
+export interface CreateLabelRequest {
   name: string;
   color: string;
 }
@@ -79,22 +94,37 @@ export interface BoardMember {
   joinedAt: Date;
 }
 
-//  Card 
+export interface BoardMemberSummary {
+  id: string | number;
+  userId: string | number;
+  userFullName: string;
+  role: 'owner' | 'admin' | 'member' | 'observer' | string;
+  boardId: string | number;
+}
 
+//  Card 
 export interface Card {
-  id: string;
+  id: string | number;
   title: string;
   description: string;
-  listId: string;
+  listId: string | number;
   order: number;
+  priority?: CardPriority;
   labels: Label[];
   dueDate?: Date;
-  assignee?: string;
+  assigneeId?: string | number;
+  assigneeName?: string;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 //  List (Column) 
+
+export interface MyInvitation {
+  token: string;
+  workspaceName: string;
+  expiryDate: string;
+}
 
 export interface BoardList {
   id: string;
@@ -107,14 +137,15 @@ export interface BoardList {
 //  Board 
 
 export interface Board {
-  id: string;
+  id: string | number;
   boardName: string;
-  boardDescription?: string;
+  boardDescription?: string | null;
+  boardCreatedAt?: string;
+  boardCreatedBy?: string;
   workSpaceId: string | number;
   isStarred?: boolean;
-  // Optional board color; if present UI will use it.
   boardColor?: string;
-  members: BoardMember[];
+  members?: BoardMember[];
 }
 
 
@@ -166,18 +197,19 @@ export interface UpdateListRequest {
 export interface CreateCardRequest {
   title: string;
   description?: string;
-  listId: string;
+  listId: string | number;
   order?: number;
+  priority?: CardPriority;
+  dueDate?: Date;
 }
 
 export interface UpdateCardRequest {
   title?: string;
   description?: string;
   order?: number;
-  listId?: string;
-  assignee?: string;
+  listId?: string | number;
+  priority?: CardPriority;
   dueDate?: Date;
-  labels?: Label[];
 }
 
 export interface MoveCardRequest {
@@ -203,7 +235,7 @@ export interface InvitationResponse {
 //  WebSocket Event
 
 export interface CardMovedEvent {
-  cardId: string;
+  cardId: string | number;
   fromListId: string;
   toListId: string;
   newIndex: number;
@@ -221,7 +253,7 @@ export interface CardCreatedEvent {
 }
 
 export interface CardDeletedEvent {
-  cardId: string;
+  cardId: string | number;
   listId: string;
   userId: string;
 }

@@ -1,44 +1,152 @@
 <!-- Navigation -->
 <nav class="navbar">
   <div class="nav-brand">
-    <span class="brand-icon">📋</span>
+    <span class="brand-mark">S</span>
     <span class="brand-text">SyncBoard</span>
   </div>
   <div class="nav-actions">
-    <a routerLink="/login" class="btn-link">Log In</a>
-    <a routerLink="/register" class="btn-primary">Sign Up</a>
+    <button type="button" class="btn-link" (click)="authModal.set('login')">Log In</button>
+    <button type="button" class="btn-primary" (click)="authModal.set('register')">Sign Up</button>
   </div>
 </nav>
 
-<!-- Hero Section -->
-<section class="hero">
-  <div class="hero-content">
-    <h1 class="hero-title">Sync It. Share It. Build It.</h1>
-    <p class="hero-subtitle">
-      The collaborative workspace where teams organize, manage, and deliver projects together.
-    </p>
-    <div class="hero-cta">
-      <a routerLink="/register" class="btn-hero-primary">Get Started - It's Free</a>
-      <a href="#how-it-works" class="btn-hero-secondary">See How It Works</a>
+<!-- SECTION 1: Hero -->
+<section class="landing-hero" id="home">
+  <div class="hero-bg"></div>
+
+  <div class="hero-inner">
+    <div class="hero-content">
+      <p class="hero-eyebrow">Project management, actually synced</p>
+      <h1 class="hero-title">Sync It. Share It. Build It.</h1>
+      <p class="hero-subtitle">
+        The collaborative workspace where teams organize, manage, and deliver projects together. Changes appear the instant they happen, for everyone.
+      </p>
+      <div class="hero-cta">
+        <button type="button" class="btn-hero-primary" (click)="authModal.set('register')">Get Started. It's Free</button>
+        <a href="#how-it-works" class="btn-hero-secondary">See How It Works</a>
+      </div>
+      <p class="hero-microcopy">No credit card required · Free forever plan</p>
     </div>
-  </div>
-  <div class="hero-visual">
-    <div class="board-preview">
-      <div class="preview-board">
-        <div class="preview-header"></div>
-        <div class="preview-lists">
-          <div class="preview-list">
-            <div class="preview-list-title">To Do</div>
-            <div class="preview-card"></div>
-            <div class="preview-card"></div>
+
+    <div class="hero-visual">
+      <div class="preview-peek"></div>
+
+      <div class="board-preview">
+        <div class="hero-badge">
+          <div class="badge-avatars">
+            <span class="avatar avatar-1">A</span>
+            <span class="avatar avatar-2">W</span>
+            <span class="avatar avatar-3">+2</span>
           </div>
-          <div class="preview-list">
-            <div class="preview-list-title">In Progress</div>
-            <div class="preview-card"></div>
+          <span class="badge-text">4 people here now</span>
+        </div>
+
+        <div class="preview-window">
+          <div class="preview-titlebar">
+            <div class="preview-dots"><span></span><span></span><span></span></div>
+            <span class="preview-board-name">Product Launch</span>
+            <span class="preview-sync"><span class="sync-dot"></span>Synced</span>
           </div>
-          <div class="preview-list">
-            <div class="preview-list-title">Done</div>
-            <div class="preview-card"></div>
+
+          <div class="preview-lists">
+            <div class="preview-list">
+              <div class="preview-list-title">To Do <span class="count">2</span></div>
+              <div class="preview-card">
+                <span class="chip chip-amber">Design</span>
+                <p class="card-title">Landing page hero</p>
+              </div>
+              <div class="preview-card">
+                <span class="chip chip-indigo">Backend</span>
+                <p class="card-title">Auth rate limiting</p>
+              </div>
+            </div>
+
+            <div class="preview-list preview-list--active">
+              <div class="preview-list-title">In Progress <span class="count">2</span></div>
+              <div class="preview-card">
+                <span class="chip chip-coral">Bug</span>
+                <p class="card-title">Fix Safari drag glitch</p>
+                <div class="card-progress"><span style="width: 60%;"></span></div>
+              </div>
+              <div class="preview-card">
+                <span class="chip chip-amber">Design</span>
+                <p class="card-title">Update onboarding copy</p>
+              </div>
+              <div class="cursor cursor-a">
+                <svg viewBox="0 0 16 16" width="14" height="14"><path d="M1 1l6 13 2-5 5-2z" fill="currentColor"/></svg>
+                <span class="cursor-tag">Aisha</span>
+              </div>
+            </div>
+
+            <div class="preview-list">
+              <div class="preview-list-title">Done <span class="count">2</span></div>
+              <div class="preview-card preview-card--done">
+                <span class="chip chip-mint">Feature</span>
+                <p class="card-title">Realtime cursors ✓</p>
+              </div>
+              <div class="preview-card preview-card--done">
+                <span class="chip chip-mint">Feature</span>
+                <p class="card-title">Drag animations ✓</p>
+              </div>
+              <div class="cursor cursor-b">
+                <svg viewBox="0 0 16 16" width="16" height="16"><path d="M1 1l6 13 2-5 5-2z" fill="currentColor"/></svg>
+                <span class="cursor-tag">Wanjiru</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-meta">
+            <span>Updated 2 min ago</span>
+            <span>·</span>
+            <span>4 collaborators online</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a href="#how-it-works" class="scroll-cue" aria-label="Scroll to learn more">
+    <span></span>
+  </a>
+</section>
+
+<!-- SECTION 2: Capabilities (features + how it works) -->
+<section class="landing-capabilities" id="how-it-works">
+  <div class="capabilities-inner">
+    <div class="section-header">
+      <p class="section-eyebrow">What you get</p>
+      <h2 class="section-title">Everything you need, nothing you don't</h2>
+      <p class="section-subtitle">Nine features. Three steps to your first board. No learning curve.</p>
+    </div>
+
+    <div class="capability-grid">
+      <div class="capability-col">
+        <h3 class="capability-title">What's inside</h3>
+        <div class="mini-feature-list">
+          <div class="mini-feature" *ngFor="let feature of features">
+            <div class="mini-feature-icon">{{ feature.icon }}</div>
+            <div>
+              <h4>{{ feature.title }}</h4>
+              <p>{{ feature.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="capability-divider"></div>
+
+      <div class="capability-col">
+        <h3 class="capability-title">How it works</h3>
+        <div class="mini-steps">
+          <div class="mini-step" *ngFor="let step of howItWorks; let last = last">
+            <div class="mini-step-marker">
+              <span class="mini-step-number">{{ step.step }}</span>
+              <span class="mini-step-line" *ngIf="!last"></span>
+            </div>
+            <div>
+              <h4>{{ step.title }}</h4>
+              <p>{{ step.description }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -46,155 +154,392 @@
   </div>
 </section>
 
-<!-- Features Section -->
-<section class="features" id="features">
-  <div class="section-header">
-    <h2 class="section-title">Everything You Need to Organize Your Work</h2>
-    <p class="section-subtitle">Powerful features to help you and your team collaborate more effectively.</p>
-  </div>
-  <div class="features-grid">
-    <div class="feature-card" *ngFor="let feature of features">
-      <div class="feature-icon">{{ feature.icon }}</div>
-      <h3 class="feature-title">{{ feature.title }}</h3>
-      <p class="feature-description">{{ feature.description }}</p>
+<!-- SECTION 3: Contact + Footer (one screen) -->
+<section class="landing-contact" id="contact">
+  <div class="contact-content">
+    <div class="contact-inner">
+      <div class="contact-copy">
+        <p class="section-eyebrow">Contact</p>
+        <h2 class="contact-title">Want to bring your team onto SyncBoard?</h2>
+        <p class="contact-desc">
+          Have a question, need a demo, or want help planning your migration? Open a card below and we'll get back to you.
+        </p>
+
+        <div class="contact-note">
+          <p>
+            Ask us about the board that stayed perfectly in sync until 200 people joined at once.<br /><br />
+            Ask us about the drag-and-drop that worked everywhere except Safari.<br /><br />
+            Ask us about the cursor that kept moving five minutes after someone closed their laptop.
+          </p>
+        </div>
+
+        <ul class="contact-reassurance">
+          <li><span class="check">✓</span>We reply within one business day</li>
+          <li><span class="check">✓</span>Free 30-minute onboarding call</li>
+          <li><span class="check">✓</span>No sales pressure, ever</li>
+        </ul>
+      </div>
+
+      <div class="contact-panel">
+        <div class="contact-panel-bg"></div>
+
+        <!-- compose-card unchanged -->
+        <div class="compose-card">
+          <div class="compose-titlebar">
+            <div class="preview-dots"><span></span><span></span><span></span></div>
+            <span class="compose-label">Support Enquiry</span>
+            <span class="compose-column">→ Inbox</span>
+          </div>
+
+          <form class="compose-form" *ngIf="!talkSuccess()" (ngSubmit)="submitTalk()">
+            <div class="compose-row">
+            <div class="compose-field compose-field--title">
+              <label>Your name</label>
+              <input type="text" [(ngModel)]="talkForm.fullName" name="fullName" placeholder="Jane Doe" />
+            </div>
+
+            <div class="compose-field">
+              <label>Contact email</label>
+              <input type="email" [(ngModel)]="talkForm.email" name="email" placeholder="jane@example.com" />
+            </div>
+          </div>
+
+            <div class="compose-field">
+              <label>Label</label>
+              <div class="chip-picker">
+                <button
+                  type="button"
+                  *ngFor="let issue of issues()"
+                  class="chip-option"
+                  [class.chip-option--active]="talkForm.issueId === issue.id"
+                  (click)="talkForm.issueId = issue.id"
+                >
+                  {{ issue.name }}
+                </button>
+              </div>
+            </div>
+
+            <div class="compose-field">
+              <label>Description</label>
+              <textarea [(ngModel)]="talkForm.message" name="message" rows="4" placeholder="Tell us how we can help..."></textarea>
+            </div>
+
+            <p class="form-status form-status-error" *ngIf="talkError()">{{ talkError() }}</p>
+
+            <label class="compose-checkbox">
+              <input
+                type="checkbox"
+                [checked]="privacyAgreed()"
+                (click)="handlePrivacyCheckboxClick($event)"
+                (change)="handlePrivacyCheckboxChange($event)"
+              />
+              <span>
+                I agree to the
+                <a href="#privacy" (click)="$event.preventDefault(); openInfoModal('privacy')">Privacy Policy</a>
+              </span>
+            </label>
+
+            <button type="submit" class="btn-compose-submit" [disabled]="talkSubmitting()">
+              <span>{{ talkSubmitting() ? 'Sending enquiry...' : 'Submit' }}</span>
+              <span class="compose-arrow">→</span>
+            </button>
+            <p class="compose-meta">Assigned to our support team · added to the Inbox column</p>
+          </form>
+
+          <div class="contact-success" *ngIf="talkSuccess()">
+            <span class="chip chip-mint">Done</span>
+            <p>Your enquiry has been send! We'll get back to you soon.</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <!-- Footer, now the second row of this same full-height section -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand-col">
+          <div class="mini-footer-brand">
+            <span class="brand-mark">S</span>
+            <span class="brand-text">SyncBoard</span>
+          </div>
+          <p class="footer-tagline">Sync it. Share it. Build it. The workspace where your team's work stays in sync — for real.</p>
+          <div class="footer-status">
+            <span class="sync-dot"></span> All systems synced
+          </div>
+        </div>
+
+        <div class="footer-links-grid">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <a href="#home">Overview</a>
+            <a href="#how-it-works">Features</a>
+            <a href="#how-it-works">How it works</a>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <a href="#home">About</a>
+            <a href="#careers" (click)="$event.preventDefault(); openInfoModal('careers')">Careers</a>
+            <a href="#contact">Contact</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="#privacy" (click)="$event.preventDefault(); openInfoModal('privacy')">Privacy Policy</a>
+            <a href="#terms" (click)="$event.preventDefault(); openInfoModal('terms')">Terms of Service</a>
+            <a href="#security" (click)="$event.preventDefault(); openInfoModal('security')">Security</a>
+          </div>
+          <div class="footer-col footer-col--social">
+            <h4>Connect</h4>
+            <div class="social-icons">
+              <a href="#" class="social-link" title="Twitter">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <a href="#" class="social-link" title="GitHub">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 0 .192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+              </a>
+              <a href="#" class="social-link" title="LinkedIn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2024 SyncBoard. All rights reserved.</p>
+        <p>Made with ❤️ for teams everywhere</p>
+      </div>
+    </div>
+  </footer>
 </section>
 
-<!-- How It Works Section -->
-<section class="how-it-works" id="how-it-works">
-  <div class="section-header">
-    <h2 class="section-title">How It Works</h2>
-    <p class="section-subtitle">Get started in minutes with three simple steps.</p>
-  </div>
-  <div class="steps-container">
-    <div class="step" *ngFor="let step of howItWorks">
-      <div class="step-number">{{ step.step }}</div>
-      <h3 class="step-title">{{ step.title }}</h3>
-      <p class="step-description">{{ step.description }}</p>
+@if (authModal()) {
+  <div class="auth-overlay" (click)="authModal.set(null)">
+    <div class="auth-modal-panel" (click)="$event.stopPropagation()">
+      @if (authModal() === 'login') {
+        <app-login [isModal]="true" (closeModal)="authModal.set(null)" (switchToRegister)="authModal.set('register')" (switchToForgot)="authModal.set('forgot')"></app-login>
+      } @else if (authModal() === 'register') {
+        <app-register [isModal]="true" (closeModal)="authModal.set(null)" (switchToLogin)="authModal.set('login')"></app-register>
+      } @else {
+        <app-forgot-password [isModal]="true" (closeModal)="authModal.set(null)" (switchToLogin)="authModal.set('login')"></app-forgot-password>
+      }
     </div>
   </div>
-</section>
+}
 
-<!-- CTA Section -->
-<section class="cta">
-  <div class="cta-content">
-    <h2 class="cta-title">Ready to organize your work?</h2>
-    <p class="cta-subtitle">Join thousands of teams who use SyncBoard to get things done.</p>
-    <a routerLink="/register" class="btn-cta">Sign Up - It's Free</a>
-  </div>
-</section>
+@if (infoModal()) {
+  <div class="info-overlay" (click)="closeInfoModal()">
+    <div class="info-modal-panel" (click)="$event.stopPropagation()">
+      <button type="button" class="info-modal-close" (click)="closeInfoModal()" aria-label="Close">×</button>
 
-<!-- FAQ Section -->
-<section class="faqs" id="faqs">
-  <div class="section-header">
-    <h2 class="section-title">Frequently Asked Questions</h2>
-    <p class="section-subtitle">Everything you need to know about SyncBoard.</p>
-  </div>
-  <div class="faq-list">
-    <div class="faq-item" *ngFor="let faq of faqs()">
-      <button class="faq-question" (click)="toggleFaq(faq.id)">
-        <span>{{ faq.question }}</span>
-        <span class="faq-icon">{{ expandedFaqId() === faq.id ? '−' : '+' }}</span>
-      </button>
-      <div class="faq-answer" *ngIf="expandedFaqId() === faq.id">
-        <p>{{ faq.answer }}</p>
-      </div>
-    </div>
-    <div class="faq-empty" *ngIf="faqs().length === 0">
-      <p>No FAQs available at the moment.</p>
-    </div>
-  </div>
-</section>
+      @switch (infoModal()) {
 
-<!-- Let's Talk Section -->
-<section class="lets-talk" id="contact">
-  <div class="section-header">
-    <h2 class="section-title">Let's Talk</h2>
-    <p class="section-subtitle">Have a question or need help? Send us a message and we'll get back to you.</p>
-  </div>
-  <div class="talk-form-wrapper">
-    <div class="talk-success" *ngIf="talkSuccess()">
-      <span>✅</span>
-      <p>Your message has been sent! We'll get back to you soon.</p>
-    </div>
-    <form class="talk-form" *ngIf="!talkSuccess()" (ngSubmit)="submitTalk()">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" [(ngModel)]="talkForm.fullName" name="fullName" placeholder="John Doe" />
-        </div>
-        <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" [(ngModel)]="talkForm.email" name="email" placeholder="john@example.com" />
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Topic</label>
-        <select [(ngModel)]="talkForm.issueId" name="issueId">
-          <option [ngValue]="null" disabled>Select a topic</option>
-          <option *ngFor="let issue of issues()" [ngValue]="issue.id">{{ issue.name }}</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Message</label>
-        <textarea [(ngModel)]="talkForm.message" name="message" rows="5" placeholder="Tell us how we can help..."></textarea>
-      </div>
-      <p class="talk-error" *ngIf="talkError()">{{ talkError() }}</p>
-      <button type="submit" class="btn-submit" [disabled]="talkSubmitting()">
-        {{ talkSubmitting() ? 'Sending...' : 'Send Message' }}
-      </button>
-    </form>
-  </div>
-</section>
+        @case ('privacy') {
+          <div class="info-modal-header">
+            <span class="info-modal-badge info-modal-badge--indigo">🔒</span>
+            <div>
+              <p class="section-eyebrow">Legal</p>
+              <h2>Privacy Policy</h2>
+              <p class="info-modal-updated">Last updated: July 2026</p>
+            </div>
+          </div>
 
-<!-- Footer -->
-<footer class="footer">
-  <div class="footer-container">
-    <div class="footer-main">
-      <div class="footer-brand">
-        <span class="brand-icon">📋</span>
-        <span class="brand-text">SyncBoard</span>
-        <p class="footer-tagline">Sync It. Share It. Build It.</p>
-      </div>
-      <div class="footer-links">
-        <div class="footer-column">
-          <h4>Product</h4>
-          <a href="#features">Features</a>
-          <a href="#how-it-works">How It Works</a>
-          <a routerLink="/register">Get Started</a>
-        </div>
-        <div class="footer-column">
-          <h4>Company</h4>
-          <a href="#">About Us</a>
-          <a href="#">Careers</a>
-          <a href="#contact">Contact</a>
-        </div>
-        <div class="footer-column">
-          <h4>Legal</h4>
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Service</a>
-          <a href="#">Security</a>
-        </div>
-      </div>
-      <div class="footer-social">
-        <h4>Connect</h4>
-        <div class="social-icons">
-          <a href="#" class="social-link" title="Twitter">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          </a>
-          <a href="#" class="social-link" title="GitHub">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 0 .192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-          </a>
-          <a href="#" class="social-link" title="LinkedIn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-          </a>
-        </div>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p class="footer-copyright">© 2024 SyncBoard. All rights reserved.</p>
-      <p class="footer-made">Made with ❤️ for teams everywhere</p>
+          <div class="info-modal-body">
+            <h3>1. Overview</h3>
+            <p>SyncBoard ("we", "us", "our") builds a collaborative workspace for teams. This policy explains what information we collect when you use SyncBoard, why we collect it, and the choices you have. We collect only what we need to run the product and keep it in sync — nothing more.</p>
+
+            <h3>2. Information We Collect</h3>
+            <p><strong>Account information:</strong> name, email address, and password (stored as a salted hash, never in plain text) when you register.</p>
+            <p><strong>Workspace content:</strong> boards, lists, cards, comments, and attachments you or your teammates create.</p>
+            <p><strong>Usage data:</strong> device type, browser, pages visited, and actions taken, collected automatically to help us fix bugs and improve performance.</p>
+            <p><strong>Cookies:</strong> used to keep you signed in and remember basic preferences. We don't use third-party advertising cookies.</p>
+
+            <h3>3. How We Use Your Information</h3>
+            <ul>
+              <li>To operate, maintain, and sync your boards in real time</li>
+              <li>To authenticate you and keep your account secure</li>
+              <li>To respond to support requests submitted through this site</li>
+              <li>To send essential service emails (password resets, security alerts)</li>
+              <li>To understand aggregate usage patterns and improve the product</li>
+            </ul>
+            <p>We do not sell your personal data, and we do not use your workspace content to train any third-party models.</p>
+
+            <h3>4. Data Sharing</h3>
+            <p>We share data only with infrastructure providers who help us run SyncBoard — cloud hosting, database, and transactional email providers — each bound by a data processing agreement. We disclose information to authorities only when legally required to do so.</p>
+
+            <h3>5. Data Retention</h3>
+            <p>We retain your account and workspace data for as long as your account is active. If you delete your account, we permanently remove your personal data within 30 days, except where retention is required for legal or security purposes.</p>
+
+            <h3>6. Your Rights</h3>
+            <p>Depending on your location, you may have the right to access, correct, export, or delete your personal data. To exercise any of these rights, contact us using the form on this page and select "Privacy Request" as the topic.</p>
+
+            <h3>7. Security Measures</h3>
+            <p>We encrypt data in transit and at rest and apply strict access controls internally. See our <a href="#security" (click)="$event.preventDefault(); openInfoModal('security')">Security</a> page for details.</p>
+
+            <h3>8. Children's Privacy</h3>
+            <p>SyncBoard is not directed at children under 16, and we do not knowingly collect personal data from them.</p>
+
+            <h3>9. Changes to This Policy</h3>
+            <p>If we make material changes, we'll notify account holders by email before the changes take effect.</p>
+
+            <h3>10. Contact Us</h3>
+            <p>Questions about this policy? Reach us through the contact form on this page, or email <a href="mailto:privacy@syncboard.app">privacy&#64;syncboard.app</a>.</p>
+          </div>
+
+          <div class="info-modal-footer">
+            <button type="button" class="btn-hero-primary" (click)="agreeToPrivacy()">I Understand, Continue</button>
+          </div>
+        }
+
+        @case ('terms') {
+          <div class="info-modal-header">
+            <span class="info-modal-badge info-modal-badge--ink">📄</span>
+            <div>
+              <p class="section-eyebrow">Legal</p>
+              <h2>Terms of Service</h2>
+              <p class="info-modal-updated">Last updated: July 2026</p>
+            </div>
+          </div>
+
+          <div class="info-modal-body">
+            <h3>1. Acceptance of Terms</h3>
+            <p>By creating an account or using SyncBoard, you agree to these Terms of Service. If you're using SyncBoard on behalf of an organization, you're agreeing on its behalf and confirming you have the authority to do so.</p>
+
+            <h3>2. Description of Service</h3>
+            <p>SyncBoard is a collaborative workspace that lets teams organize work using boards, lists, and cards, with real-time synchronization across all connected users.</p>
+
+            <h3>3. Account Registration & Responsibilities</h3>
+            <p>You're responsible for keeping your login credentials confidential and for all activity that happens under your account. Notify us immediately if you suspect unauthorized access.</p>
+
+            <h3>4. Acceptable Use</h3>
+            <p>You agree not to use SyncBoard to:</p>
+            <ul>
+              <li>Upload unlawful, harassing, or infringing content</li>
+              <li>Attempt to gain unauthorized access to other accounts or our systems</li>
+              <li>Reverse engineer or resell the service without written permission</li>
+              <li>Disrupt or overload our infrastructure</li>
+            </ul>
+
+            <h3>5. Subscription & Billing</h3>
+            <p>SyncBoard offers a free forever plan and paid team plans. Paid subscriptions renew automatically until cancelled. You can cancel anytime from account settings; you'll retain access until the end of the current billing period.</p>
+
+            <h3>6. Intellectual Property</h3>
+            <p>You retain ownership of everything you create on SyncBoard. We claim no rights to your boards or content beyond what's needed to operate and display it back to you and your collaborators.</p>
+
+            <h3>7. Termination</h3>
+            <p>You may delete your account at any time. We may suspend or terminate accounts that violate these terms, with notice where reasonably possible.</p>
+
+            <h3>8. Disclaimers & Limitation of Liability</h3>
+            <p>SyncBoard is provided "as is." We work hard to keep it reliable, but we don't guarantee uninterrupted or error-free service. To the extent permitted by law, our liability is limited to the amount you've paid us in the past 12 months.</p>
+
+            <h3>9. Governing Law</h3>
+            <p>These terms are governed by the laws of the jurisdiction in which SyncBoard is incorporated, without regard to conflict-of-law principles.</p>
+
+            <h3>10. Changes to These Terms</h3>
+            <p>We'll notify account holders of material changes by email at least 14 days before they take effect.</p>
+
+            <h3>11. Contact</h3>
+            <p>Questions? Email <a href="mailto:legal@syncboard.app">legal&#64;syncboard.app</a>.</p>
+          </div>
+        }
+
+        @case ('security') {
+          <div class="info-modal-header">
+            <span class="info-modal-badge info-modal-badge--mint">🛡️</span>
+            <div>
+              <p class="section-eyebrow">Trust</p>
+              <h2>Security</h2>
+              <p class="info-modal-updated">Last updated: July 2026</p>
+            </div>
+          </div>
+
+          <div class="info-modal-body">
+            <h3>Our Approach</h3>
+            <p>Security isn't a checkbox for us — it's what makes real-time sync trustworthy in the first place. Here's what protects your data, described plainly rather than in vague marketing language.</p>
+
+            <h3>Encryption</h3>
+            <p>All traffic between your browser and SyncBoard is encrypted in transit via TLS 1.2+. Data at rest, including board content and attachments, is encrypted using industry-standard encryption at the database and storage layer.</p>
+
+            <h3>Infrastructure & Hosting</h3>
+            <p>SyncBoard runs on reputable cloud infrastructure with physical and network security managed by our hosting provider. We isolate environments between development, staging, and production.</p>
+
+            <h3>Access Controls</h3>
+            <p>Internal access to production systems and customer data is limited to engineers who need it, protected by multi-factor authentication, and logged. Passwords are never stored in plain text — we use salted, industry-standard hashing.</p>
+
+            <h3>Application Security</h3>
+            <p>We run automated dependency and vulnerability scanning on every release, and code changes go through peer review before deployment.</p>
+
+            <h3>Incident Response</h3>
+            <p>If we ever detect a security incident affecting your data, we'll notify affected account holders as soon as we can confirm the scope, along with what we're doing about it.</p>
+
+            <h3>Responsible Disclosure</h3>
+            <p>Found a security issue? We want to know. Email <a href="mailto:security@syncboard.app">security&#64;syncboard.app</a> with details, and we'll respond within 2 business days. Please don't publicly disclose a vulnerability before we've had a chance to address it.</p>
+
+            <h3>Compliance</h3>
+            <p>SyncBoard is a growing product and we're honest about where we are: we follow security best practices day to day, and we're working toward formal certifications like SOC 2 as the company scales. We'll update this page as that progresses.</p>
+
+            <h3>Questions</h3>
+            <p>Reach the security team any time at <a href="mailto:security@syncboard.app">security&#64;syncboard.app</a>.</p>
+          </div>
+        }
+
+        @case ('careers') {
+          <div class="info-modal-header">
+            <span class="info-modal-badge info-modal-badge--amber">🚀</span>
+            <div>
+              <p class="section-eyebrow">Join us</p>
+              <h2>Careers at SyncBoard</h2>
+              <p class="info-modal-updated">We're a small, remote-friendly team</p>
+            </div>
+          </div>
+
+          <div class="info-modal-body">
+            <p>We're building the workspace we wished existed — one where "synced" actually means synced. We're a small team that ships fast, reviews each other's code closely, and uses SyncBoard itself to run SyncBoard. If that sounds appealing, we'd like to hear from you.</p>
+
+            <h3>Open Positions</h3>
+
+            <div class="job-card">
+              <div class="job-card-top">
+                <h4>Senior Backend Engineer</h4>
+                <span class="chip chip-indigo">Full-time</span>
+              </div>
+              <p class="job-meta">Remote · Java / Spring Boot</p>
+              <p>Own core services powering real-time sync — WebSocket infrastructure, board/card APIs, and the event pipeline that keeps every client up to date.</p>
+            </div>
+
+            <div class="job-card">
+              <div class="job-card-top">
+                <h4>Frontend Engineer</h4>
+                <span class="chip chip-mint">Full-time</span>
+              </div>
+              <p class="job-meta">Remote · Angular</p>
+              <p>Build the board experience itself — drag-and-drop, live cursors, and the small interactions that make collaboration feel instant.</p>
+            </div>
+
+            <div class="job-card">
+              <div class="job-card-top">
+                <h4>Product Designer</h4>
+                <span class="chip chip-amber">Full-time</span>
+              </div>
+              <p class="job-meta">Remote</p>
+              <p>Shape how teams organize their work in SyncBoard, from onboarding flows to the visual language of the board itself.</p>
+            </div>
+
+            <div class="job-card">
+              <div class="job-card-top">
+                <h4>Customer Support Specialist</h4>
+                <span class="chip chip-coral">Part-time</span>
+              </div>
+              <p class="job-meta">Remote · EAT-friendly hours</p>
+              <p>Be the first response for teams getting started with SyncBoard, and help us catch real usability issues early.</p>
+            </div>
+
+            <h3>Don't see your role?</h3>
+            <p>We're a small team and roles change as we grow. If you think you'd be a strong fit anyway, send your CV and a short note to <a href="mailto:careers@syncboard.app">careers&#64;syncboard.app</a>.</p>
+          </div>
+        }
+      }
     </div>
   </div>
-</footer>
+}

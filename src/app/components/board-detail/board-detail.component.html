@@ -45,7 +45,7 @@
           <div class="card-title">{{ card.title }}</div>
           <div class="card-footer">
             <span class="due-date" *ngIf="card.dueDate">📅</span>
-            <span class="assignee" *ngIf="card.assignee">{{ getInitials(card.assignee) }}</span>
+            <span class="assignee" *ngIf="card.assigneeName">{{ getInitials(card.assigneeName) }}</span>
           </div>
         </div>
         <div class="inline-card-form" *ngIf="activeCardListId() === list.id">
@@ -79,5 +79,5 @@
     </div>
   </div>
 
-  <app-card-modal *ngIf="selectedCard()" [card]="selectedCard()!" (save)="onSaveCard($event)" (delete)="onDeleteCard($event)" (close)="closeCardModal()"></app-card-modal>
+<app-card-modal *ngIf="selectedCard()" [card]="selectedCard()!" [boardId]="board()?.id ?? null" (save)="onSaveCard($event)" (delete)="onDeleteCard($event)" (close)="closeCardModal()"></app-card-modal>
 </div>

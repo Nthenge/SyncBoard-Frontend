@@ -16,10 +16,9 @@ import { Board, CreateBoardRequest } from '../../models/board.models';
   styleUrls: ['./boards.component.css']
 })
 export class BoardsComponent implements OnInit {
-  trackByBoardId(_index: number, board: Board): string {
-    return board.id;
-  }
-
+  trackByBoardId(_index: number, board: Board): string | number {
+  return board.id;
+}
   trackByMemberEmail(_index: number, member: any): string {
     return member?.email || member?.userId || member?.name;
   }
@@ -82,9 +81,9 @@ export class BoardsComponent implements OnInit {
 
   filterBoards(): void {}
 
-  openBoard(boardId: string): void {
-    this.router.navigate(['/board', boardId]);
-  }
+  openBoard(boardId: string | number): void {
+  this.router.navigate(['/board', boardId]);
+}
 
 
   goBack(): void {

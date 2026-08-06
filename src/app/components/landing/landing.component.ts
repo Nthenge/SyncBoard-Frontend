@@ -2,24 +2,30 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { FaqService } from '../../services/faq.service';
 import { TalkService } from '../../services/talk.service';
-import { FAQ, Issue } from '../../models/board.models';
+import { Issue } from '../../models/board.models';
+import { LoginComponent } from '../auth/login/login.component';
+import { RegisterComponent } from '../auth/register/register.component';
+import { ForgotPasswordComponent } from '../auth/forgot-password/forgot-password.component';
+
+type InfoModalType = 'privacy' | 'terms' | 'security' | 'careers' | null;
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, LoginComponent, RegisterComponent, ForgotPasswordComponent],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })
 export class LandingComponent implements OnInit {
-  private faqService = inject(FaqService);
   private talkService = inject(TalkService);
 
-  faqs = signal<FAQ[]>([]);
+  authModal = signal<'login' | 'register' | 'forgot' | null>(null);
+
+  infoModal = signal<InfoModalType>(null);
+  privacyAgreed = signal(false);
+
   issues = signal<Issue[]>([]);
-  expandedFaqId = signal<number | null>(null);
 
   talkForm = {
     fullName: '',
@@ -34,11 +40,8 @@ export class LandingComponent implements OnInit {
   features = [
     { icon: '📋', title: 'Visual Boards', description: 'Organize work visually with boards that represent projects, goals, or any workflow.' },
     { icon: '📝', title: 'Lists & Cards', description: 'Break down work into lists and cards to track every detail.' },
-    { icon: '✋', title: 'Drag & Drop', description: 'Move cards between lists with simple drag and drop.' },
-    { icon: '⚡', title: 'Real-Time Collaboration', description: 'Work together instantly - see changes as they happen.' },
-    { icon: '👥', title: 'Team Collaboration', description: 'Invite team members, assign tasks, and collaborate seamlessly.' },
-    { icon: '🔧', title: 'Custom Workflows', description: 'Create custom lists and workflows that fit your team\'s needs.' },
-    { icon: '📱', title: 'Accessible Anywhere', description: 'Access your boards from any device, anywhere.' }
+    { icon: '⚡', title: 'Real-Time Collaboration', description: 'Work together instantly — see changes as they happen.' },
+    { icon: '🔧', title: 'Custom Workflows', description: 'Create custom lists and workflows that fit your team\'s needs.' }
   ];
 
   howItWorks = [
@@ -48,19 +51,38 @@ export class LandingComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.faqService.getActiveFaqs().subscribe({
-      next: (faqs) => this.faqs.set(faqs),
-      error: () => {}
-    });
-
     this.talkService.getActiveIssues().subscribe({
-      next: (issues) => this.issues.set(issues),
-      error: () => {}
+        next: (response: any) => {
+            const list = Array.isArray(response) ? response : (response?.data ?? []);
+            this.issues.set(list);
+        },
+        error: () => {}
     });
+}
+
+  openInfoModal(type: Exclude<InfoModalType, null>): void {
+    this.infoModal.set(type);
   }
 
-  toggleFaq(id: number): void {
-    this.expandedFaqId.set(this.expandedFaqId() === id ? null : id);
+  closeInfoModal(): void {
+    this.infoModal.set(null);
+  }
+
+  agreeToPrivacy(): void {
+    this.privacyAgreed.set(true);
+    this.infoModal.set(null);
+  }
+
+  handlePrivacyCheckboxClick(event: MouseEvent): void {
+    if (!this.privacyAgreed()) {
+      event.preventDefault();
+      this.openInfoModal('privacy');
+    }
+  }
+
+  handlePrivacyCheckboxChange(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.privacyAgreed.set(checked);
   }
 
   submitTalk(): void {
@@ -68,6 +90,11 @@ export class LandingComponent implements OnInit {
 
     if (!fullName.trim() || !email.trim() || !message.trim() || !issueId) {
       this.talkError.set('Please fill in all fields.');
+      return;
+    }
+
+    if (!this.privacyAgreed()) {
+      this.talkError.set('Please agree to the Privacy Policy first.');
       return;
     }
 
@@ -79,6 +106,7 @@ export class LandingComponent implements OnInit {
         this.talkSubmitting.set(false);
         this.talkSuccess.set(true);
         this.talkForm = { fullName: '', email: '', message: '', issueId: null };
+        this.privacyAgreed.set(false);
       },
       error: (err) => {
         this.talkSubmitting.set(false);

@@ -1,33 +1,39 @@
-// ============================================
-// Card Service - CRUD Operations for Cards
-// ============================================
-
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Card, CreateCardRequest, UpdateCardRequest, MoveCardRequest, Label } from '../models/board.models';
+import { Card, CreateCardRequest, UpdateCardRequest, MoveCardRequest } from '../models/board.models';
 import { ListService } from './list.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CardService {
-  // Use real API - backend is ready
   private useMockData = false;
+  private base = `${environment.apiUrl}${environment.api.basePath}`;
 
   constructor(
     private http: HttpClient,
     private listService: ListService
   ) {}
 
-  // ============================================
-  // Card CRUD Operations
-  // ============================================
+  private mapCard = (raw: any): Card => ({
+    id: raw.id,
+    title: raw.title,
+    description: raw.description ?? '',
+    listId: raw.listId,
+    order: raw.position,
+    priority: raw.priority,
+    dueDate: raw.dueDate ? new Date(raw.dueDate) : undefined,
+    labels: Array.isArray(raw.labels)
+      ? raw.labels.map((l: any) => ({ id: l.id, name: l.name, color: l.color, boardId: l.boardId }))
+      : [],
+    assigneeId: raw.assigneeId,
+    assigneeName: raw.assigneeName,
+    createdAt: raw.createdAt ? new Date(raw.createdAt) : new Date(),
+    updatedAt: undefined
+  });
 
-  /**
-   * Get cards for a specific list
-   */
   getCards(listId: string): Observable<Card[]> {
     if (this.useMockData) {
       const lists = this.listService.getCurrentLists();
@@ -35,257 +41,71 @@ export class CardService {
       return of(list?.cards || []).pipe(delay(200));
     }
 
-    return this.http.get<Card[]>(
-      `${environment.apiUrl}${environment.api.basePath}/cards/lists/${listId}/cards`
+    return this.http.get<any>(`${this.base}/cards/lists/${listId}/cards`).pipe(
+      map(response => {
+        const raw = response?.data ?? response ?? [];
+        return (Array.isArray(raw) ? raw : []).map(this.mapCard);
+      })
     );
   }
 
-  /**
-   * Get a single card by ID
-   */
   getCard(cardId: string): Observable<Card> {
-    if (this.useMockData) {
-      const lists = this.listService.getCurrentLists();
-      for (const list of lists) {
-        const card = list.cards.find(c => c.id === cardId);
-        if (card) {
-          return of(card).pipe(delay(200));
-        }
-      }
-    }
-
-    return this.http.get<Card>(
-      `${environment.apiUrl}${environment.api.basePath}/cards/${cardId}`
+    return this.http.get<any>(`${this.base}/cards/${cardId}`).pipe(
+      map(response => this.mapCard(response?.data ?? response))
     );
   }
 
-  /**
-   * Create a new card
-   */
   createCard(request: CreateCardRequest): Observable<Card> {
-    if (this.useMockData) {
-      const lists = this.listService.getCurrentLists();
-      const listIndex = lists.findIndex(l => l.id === request.listId);
-      
-      if (listIndex !== -1) {
-        const list = lists[listIndex];
-        const newCard: Card = {
-          id: `card-${Date.now()}`,
-          title: request.title,
-          description: request.description || '',
-          listId: request.listId,
-          order: request.order ?? list.cards.length,
-          labels: [],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        
-        // Add card to list
-        const updatedList = {
-          ...list,
-          cards: [...list.cards, newCard]
-        };
-        
-        const updatedLists = [...lists];
-        updatedLists[listIndex] = updatedList;
-        this.listService.updateLists(updatedLists);
-        
-        return of(newCard).pipe(delay(200));
-      }
-    }
+    const body = {
+      listId: request.listId,
+      title: request.title,
+      description: request.description,
+      priority: request.priority,
+      dueDate: request.dueDate,
+      position: request.order
+    };
 
-    return this.http.post<Card>(
-      `${environment.apiUrl}${environment.api.basePath}/cards`,
-      request
+    return this.http.post<any>(`${this.base}/cards`, body).pipe(
+      map(response => this.mapCard(response?.data ?? response))
     );
   }
 
-  /**
-   * Update a card
-   */
   updateCard(cardId: string, updates: UpdateCardRequest): Observable<Card> {
-    if (this.useMockData) {
-      const lists = this.listService.getCurrentLists();
-      
-      for (let i = 0; i < lists.length; i++) {
-        const cardIndex = lists[i].cards.findIndex(c => c.id === cardId);
-        
-        if (cardIndex !== -1) {
-          const updatedCard = {
-            ...lists[i].cards[cardIndex],
-            ...updates,
-            updatedAt: new Date()
-          };
-          
-          const updatedCards = [...lists[i].cards];
-          updatedCards[cardIndex] = updatedCard;
-          
-          const updatedList = { ...lists[i], cards: updatedCards };
-          const updatedLists = [...lists];
-          updatedLists[i] = updatedList;
-          this.listService.updateLists(updatedLists);
-          
-          return of(updatedCard).pipe(delay(200));
-        }
-      }
-    }
+    const body = {
+      listId: updates.listId,
+      title: updates.title,
+      description: updates.description,
+      priority: updates.priority,
+      dueDate: updates.dueDate,
+      position: updates.order
+    };
 
-    return this.http.put<Card>(
-      `${environment.apiUrl}${environment.api.basePath}/cards/${cardId}`,
-      updates
+    return this.http.put<any>(`${this.base}/cards/${cardId}`, body).pipe(
+      map(response => this.mapCard(response?.data ?? response))
     );
   }
 
-  /**
-   * Move card to a different list
-   */
   moveCard(request: MoveCardRequest): Observable<Card> {
-    if (this.useMockData) {
-      const lists = this.listService.getCurrentLists();
-      let movedCard: Card | null = null;
-      
-      // Find and remove card from current list
-      for (let i = 0; i < lists.length; i++) {
-        const cardIndex = lists[i].cards.findIndex(c => c.id === request.cardId);
-        
-        if (cardIndex !== -1) {
-          movedCard = { ...lists[i].cards[cardIndex], listId: request.targetListId };
-          const updatedCards = [...lists[i].cards];
-          updatedCards.splice(cardIndex, 1);
-          
-          const updatedList = { ...lists[i], cards: updatedCards };
-          const updatedLists = [...lists];
-          updatedLists[i] = updatedList;
-          
-          // Add to target list
-          const targetListIndex = updatedLists.findIndex(l => l.id === request.targetListId);
-          if (targetListIndex !== -1 && movedCard) {
-            const targetList = updatedLists[targetListIndex];
-            const newCards = [...targetList.cards];
-            newCards.splice(request.newIndex, 0, movedCard);
-            
-            updatedLists[targetListIndex] = { ...targetList, cards: newCards };
-          }
-          
-          this.listService.updateLists(updatedLists);
-          break;
-        }
-      }
-      
-      if (movedCard) {
-        return of(movedCard).pipe(delay(200));
-      }
-    }
-
-    return this.http.put<Card>(
-      `${environment.apiUrl}${environment.api.basePath}/cards/${request.cardId}/move`,
-      request
+    return this.http.put<any>(`${this.base}/cards/${request.cardId}/move`, request).pipe(
+      map(response => this.mapCard(response?.data ?? response))
     );
   }
 
-  /**
-   * Delete a card
-   */
   deleteCard(cardId: string): Observable<void> {
-    if (this.useMockData) {
-      const lists = this.listService.getCurrentLists();
-      
-      for (let i = 0; i < lists.length; i++) {
-        const cardIndex = lists[i].cards.findIndex(c => c.id === cardId);
-        
-        if (cardIndex !== -1) {
-          const updatedCards = [...lists[i].cards];
-          updatedCards.splice(cardIndex, 1);
-          
-          const updatedList = { ...lists[i], cards: updatedCards };
-          const updatedLists = [...lists];
-          updatedLists[i] = updatedList;
-          this.listService.updateLists(updatedLists);
-          
-          return of(undefined).pipe(delay(200));
-        }
-      }
-    }
-
-    return this.http.delete<void>(
-      `${environment.apiUrl}${environment.api.basePath}/cards/${cardId}`
-    );
+    return this.http.delete<void>(`${this.base}/cards/${cardId}`);
   }
 
-  // ============================================
-  // Label Operations
-  // ============================================
+  reassignCard(cardId: string | number, userId: string | number): Observable<Card> {
+  return this.http.put<any>(`${this.base}/cards/${cardId}/assignee`, { userId }).pipe(
+    map(response => this.mapCard(response?.data ?? response))
+  );
+}
 
-  /**
-   * Add a label to a card
-   */
-  addLabel(cardId: string, label: Label): Observable<Card> {
-    if (this.useMockData) {
-      const lists = this.listService.getCurrentLists();
-      
-      for (let i = 0; i < lists.length; i++) {
-        const cardIndex = lists[i].cards.findIndex(c => c.id === cardId);
-        
-        if (cardIndex !== -1) {
-          const card = lists[i].cards[cardIndex];
-          const updatedCard = {
-            ...card,
-            labels: [...card.labels, label],
-            updatedAt: new Date()
-          };
-          
-          const updatedCards = [...lists[i].cards];
-          updatedCards[cardIndex] = updatedCard;
-          
-          const updatedList = { ...lists[i], cards: updatedCards };
-          const updatedLists = [...lists];
-          updatedLists[i] = updatedList;
-          this.listService.updateLists(updatedLists);
-          
-          return of(updatedCard).pipe(delay(200));
-        }
-      }
-    }
-
-    return this.http.post<Card>(
-      `${environment.apiUrl}${environment.api.basePath}/cards/${cardId}/labels`,
-      label
-    );
+  attachLabel(cardId: string | number, labelId: string | number): Observable<void> {
+    return this.http.post<void>(`${this.base}/cards/${cardId}/labels/${labelId}`, {});
   }
 
-  /**
-   * Remove a label from a card
-   */
-  removeLabel(cardId: string, labelId: string): Observable<Card> {
-    if (this.useMockData) {
-      const lists = this.listService.getCurrentLists();
-      
-      for (let i = 0; i < lists.length; i++) {
-        const cardIndex = lists[i].cards.findIndex(c => c.id === cardId);
-        
-        if (cardIndex !== -1) {
-          const card = lists[i].cards[cardIndex];
-          const updatedCard = {
-            ...card,
-            labels: card.labels.filter(l => l.id !== labelId),
-            updatedAt: new Date()
-          };
-          
-          const updatedCards = [...lists[i].cards];
-          updatedCards[cardIndex] = updatedCard;
-          
-          const updatedList = { ...lists[i], cards: updatedCards };
-          const updatedLists = [...lists];
-          updatedLists[i] = updatedList;
-          this.listService.updateLists(updatedLists);
-          
-          return of(updatedCard).pipe(delay(200));
-        }
-      }
-    }
-
-    return this.http.delete<Card>(
-      `${environment.apiUrl}${environment.api.basePath}/cards/${cardId}/labels/${labelId}`
-    );
+  detachLabel(cardId: string | number, labelId: string | number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/cards/${cardId}/labels/${labelId}`);
   }
 }

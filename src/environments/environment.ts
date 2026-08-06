@@ -2,7 +2,7 @@ import { endpoints } from '../app/config/endpoints';
 
 export const environment = {
   production: false,
-  apiUrl: 'https://syncboard-ptvu.onrender.com',
+  apiUrl: 'localhost:8084',
   api: {
     basePath: '',
     endpoints: endpoints

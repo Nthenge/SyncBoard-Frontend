@@ -1,19 +1,25 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
     selector: 'app-forgot-password',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, NgTemplateOutlet],
     templateUrl: './forgot-password.component.html',
-    styleUrl: './forgot-password.component.css'
+    styleUrl: './forgot-password.component.scss'
 })
 export class ForgotPasswordComponent {
     private fb = inject(FormBuilder);
     private authService = inject(AuthService);
+
+    @Input() isModal = false;
+    @Output() closeModal = new EventEmitter<void>();
+    @Output() switchToLogin = new EventEmitter<void>();
+
+    @HostBinding('class.is-modal') get modalClass() { return this.isModal; }
 
     forgotForm = this.fb.group({
         email: ['', [Validators.required, Validators.email]]
@@ -28,10 +34,10 @@ export class ForgotPasswordComponent {
             Object.values(this.forgotForm.controls).forEach(control => control.markAsTouched());
             return;
         }
-        
+
         this.loading.set(true);
         this.error.set('');
-        
+
         try {
             const { email } = this.forgotForm.value;
             await this.authService.forgotPassword(email!);
@@ -44,4 +50,3 @@ export class ForgotPasswordComponent {
         }
     }
 }
-

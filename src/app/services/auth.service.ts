@@ -88,13 +88,13 @@ export class AuthService {
             ).toPromise();
             if (response) {
                 this.saveAuth(response);
-                // Redirect to workspaces after login
                 this.router.navigate(['/workspaces']);
             } else {
                 throw new Error('Login failed: No response from server');
             }
-        } catch (error) {
-            throw error;
+        } catch (error: any) {
+            const backendMessage = error?.error?.message;
+            throw new Error(backendMessage || 'Login failed. Please try again.');
         } finally {
             this.loadingSignal.set(false);
         }
@@ -107,8 +107,9 @@ export class AuthService {
                 `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.register}`,
                 credentials
             ).toPromise();
-        } catch (error) {
-            throw error;
+        } catch (error: any) {
+            const backendMessage = error?.error?.message;
+            throw new Error(backendMessage || 'Registration failed. Please try again.');
         } finally {
             this.loadingSignal.set(false);
         }
@@ -167,8 +168,9 @@ export class AuthService {
                 `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.forgotPassword}`,
                 { email }
             ).toPromise();
-        } catch (error) {
-            throw error;
+        } catch (error: any) {
+            const backendMessage = error?.error?.message;
+            throw new Error(backendMessage || 'Could not process request. Please try again.');
         } finally {
             this.loadingSignal.set(false);
         }
@@ -181,8 +183,9 @@ export class AuthService {
                 `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.resetPassword}`,
                 { token, newPassword }
             ).toPromise();
-        } catch (error) {
-            throw error;
+        } catch (error: any) {
+            const backendMessage = error?.error?.message;
+            throw new Error(backendMessage || 'Could not reset password. Please try again.');
         } finally {
             this.loadingSignal.set(false);
         }
@@ -202,8 +205,9 @@ export class AuthService {
             }
 
             return response || { success: false, message: 'Failed to delete account' };
-        } catch (error) {
-            throw error;
+        } catch (error: any) {
+            const backendMessage = error?.error?.message;
+            throw new Error(backendMessage || 'Could not delete account. Please try again.');
         } finally {
             this.loadingSignal.set(false);
         }

@@ -1,21 +1,28 @@
-
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    imports: [CommonModule, ReactiveFormsModule, RouterLink, NgTemplateOutlet],
     templateUrl: './login.component.html',
-    styleUrl: './login.component.css'
+    styleUrl: './login.component.scss'
 })
 export class LoginComponent implements OnInit {
     private fb = inject(FormBuilder);
     private authService = inject(AuthService);
     private router = inject(Router);
+
+    @Input() isModal = false;
+    @Output() closeModal = new EventEmitter<void>();
+
+    @Output() switchToRegister = new EventEmitter<void>();
+    @Output() switchToForgot = new EventEmitter<void>();
+
+    @HostBinding('class.is-modal') get modalClass() { return this.isModal; }
 
     loginForm = this.fb.group({
         email: ['', [Validators.required, Validators.email]],
@@ -33,10 +40,11 @@ export class LoginComponent implements OnInit {
     });
 
     ngOnInit(): void {
+        // unchanged from before
         const registrationComplete = localStorage.getItem('registration_complete');
         const emailVerified = this.authService.isEmailVerified();
         const verificationError = this.authService.getVerificationError();
-        
+
         if (registrationComplete) {
             localStorage.removeItem('registration_complete');
             this.successMessage.set('Account created successfully! Please sign in.');
@@ -54,7 +62,7 @@ export class LoginComponent implements OnInit {
             Object.values(this.loginForm.controls).forEach(control => control.markAsTouched());
             return;
         }
-        
+
         this.loading.set(true);
         this.error.set('');
         this.successMessage.set('');
@@ -62,6 +70,10 @@ export class LoginComponent implements OnInit {
         try {
             const { email, password } = this.loginForm.value;
             await this.authService.login({ email: email!, password: password! });
+
+            if (this.isModal) {
+                this.closeModal.emit();
+            }
             this.router.navigate(['/workspaces']);
         } catch (err) {
             this.error.set(err instanceof Error ? err.message : 'Login failed');
@@ -80,4 +92,3 @@ export class LoginComponent implements OnInit {
     get email() { return this.loginForm.get('email'); }
     get password() { return this.loginForm.get('password'); }
 }
-
