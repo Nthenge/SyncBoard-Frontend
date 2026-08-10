@@ -107,7 +107,7 @@ getLists(boardId: string): Observable<BoardList[]> {
     }
 
     return this.http.put<BoardList>(
-      `${environment.apiUrl}${environment.api.basePath}/lists/${listId}`,
+      `${environment.apiUrl}${environment.api.basePath}/boards/lists/${listId}`,
       updates
     );
   }
@@ -124,7 +124,7 @@ getLists(boardId: string): Observable<BoardList[]> {
     }
 
     return this.http.delete<void>(
-      `${environment.apiUrl}${environment.api.basePath}/lists/${listId}`
+      `${environment.apiUrl}${environment.api.basePath}/boards/lists/${listId}`
     );
   }
 

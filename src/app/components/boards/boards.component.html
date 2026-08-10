@@ -1,75 +1,41 @@
 <div class="boards-container">
 
-  <nav class="trello-nav">
-    <div class="nav-left">
-      <div class="logo" (click)="goBack()">
-        <span class="logo-icon">📋</span>
-        <span class="logo-text">SyncBoard</span>
-      </div>
-      <div class="nav-links">
-        <a href="#" class="nav-link active">Workspaces</a>
-        <a href="#" class="nav-link">Recent</a>
-        <a href="#" class="nav-link">Starred</a>
-      </div>
-    </div>
+  <aside class="ws-sidebar">
 
-    <div class="nav-center">
-      <div class="search-container">
-        <span class="search-icon">🔍</span>
-        <input type="text" class="search-input" placeholder="Search boards..." [(ngModel)]="searchQuery" (input)="filterBoards()">
-      </div>
-    </div>
-
-    <div class="nav-right">
-      <button class="btn-invite" (click)="openInviteModal()">+ Invite Member</button>
-      <button class="btn-create-board" (click)="showCreateModal.set(true)">+ Create Board</button>
-      <app-user-menu></app-user-menu>
-    </div>
-  </nav>
-
-  <main class="boards-main">
-    <div class="workspace-header">
-      <div class="workspace-info">
-        <div class="workspace-avatar">{{ userName().charAt(0).toUpperCase() }}</div>
-        <div class="workspace-details">
-          <h1>{{ userName() }}'s Workspace</h1>
-          <p class="workspace-subtitle">Private workspace</p>
+    <div class="sidebar-top-group">
+      <div class="sidebar-account">
+        <div class="account-trigger">
+          <span class="account-avatar">{{ getInitial(userName()) }}</span>
+          <span class="account-name">{{ userName() }}</span>
         </div>
       </div>
+
+      <div class="sidebar-search">
+        <span class="sidebar-search-icon">⌕</span>
+        <input type="text" placeholder="Search boards..." [(ngModel)]="searchQuery" (input)="filterBoards()">
+      </div>
     </div>
 
-    <section class="boards-section">
-      <div class="section-header">
-        <h2>
-          <span class="section-icon">📊</span>
-          Your Boards
-          <span class="board-count">({{ filteredBoards().length }})</span>
-        </h2>
+    <!-- TOP HALF: boards list -->
+    <div class="sidebar-half sidebar-half--boards">
+      <div class="sidebar-section-row">
+        <span class="sidebar-section-label">Boards</span>
+        <span class="sidebar-count" *ngIf="boards().length">{{ filteredBoards().length }}</span>
       </div>
 
-      <div class="board-grid" *ngIf="boards().length > 0">
-        <div class="board-card create-card" (click)="showCreateModal.set(true)">
-          <div class="create-card-content">
-            <span class="plus-icon">+</span>
-            <span>Create new board</span>
-          </div>
-        </div>
-
-        <div class="board-card" *ngFor="let board of filteredBoards(); trackBy: trackByBoardId" (click)="board.id && openBoard(board.id)">
-          <div class="board-cover" [style.background]="getBoardColor(board)"></div>
-
-          <div class="board-info">
-            <h3>{{ board.boardName }}</h3>
-            <div class="board-meta">
-              <div class="member-avatars">
-                <span class="member-avatar" *ngFor="let member of (board.members || []).slice(0, 3); trackBy: trackByMemberEmail" [title]="member.name">
-                  {{ getInitials(member.name) }}
-                </span>
-                <span class="more-members" *ngIf="(board.members || []).length > 3">
-                  +{{ (board.members || []).length - 3 }}
-                </span>
-              </div>
-            </div>
+      <div class="board-list" *ngIf="boards().length > 0">
+        <div class="board-list-item"
+             [class.board-list-item--active]="board.id === selectedBoardId()"
+             *ngFor="let board of filteredBoards(); trackBy: trackByBoardId"
+             (click)="selectBoard(board)">
+          <span class="board-list-avatar" [style.background]="getBoardColor(board)">
+            {{ getInitial(board.boardName) }}
+          </span>
+          <div class="board-list-info">
+            <span class="board-list-name">{{ board.boardName }}</span>
+            <span class="board-list-meta">
+              {{ (board.members || []).length }} member{{ (board.members || []).length !== 1 ? 's' : '' }}
+            </span>
           </div>
           <button class="btn-star" (click)="toggleStar(board, $event)" [class.starred]="board.isStarred">
             {{ board.isStarred ? '⭐' : '☆' }}
@@ -77,22 +43,219 @@
         </div>
       </div>
 
-      <div class="empty-state" *ngIf="boards().length === 0 && !loading()">
-        <div class="empty-icon">📋</div>
-        <h3>No boards yet</h3>
-        <p>Create your first board to get started!</p>
-        <button class="btn-create-first" (click)="showCreateModal.set(true)">+ Create Board</button>
+      <div class="empty-state empty-state--sidebar" *ngIf="boards().length === 0">
+        <p>No boards yet. Create one below to get started.</p>
       </div>
 
-      <div class="loading-state" *ngIf="loading()">
-        <div class="spinner"></div>
-        <p>Loading boards...</p>
+      <p class="sidebar-empty-hint" *ngIf="boards().length > 0 && filteredBoards().length === 0">
+        No boards matching "{{ searchQuery }}"
+      </p>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- BOTTOM HALF: quick actions -->
+    <div class="sidebar-half sidebar-half--quickactions">
+      <div class="sidebar-section-row">
+        <span class="sidebar-section-label">Quick actions</span>
       </div>
 
-      <div class="no-results" *ngIf="boards().length > 0 && filteredBoards().length === 0">
-        <p>No boards matching "{{ searchQuery }}"</p>
+      <div class="quick-list">
+        <button class="quick-item" (click)="showCreateModal.set(true)">
+          <span class="qi-icon">➕</span>
+          <span class="qi-text">Create board</span>
+        </button>
+        <button class="quick-item" (click)="openInviteModal()">
+          <span class="qi-icon">👥</span>
+          <span class="qi-text">Invite member</span>
+        </button>
       </div>
-    </section>
+    </div>
+
+  </aside>
+
+  <main class="boards-main">
+
+    <div class="loading-state" *ngIf="loading()">
+      <div class="spinner"></div>
+      <p>Loading boards...</p>
+    </div>
+
+    <ng-container *ngIf="!loading()">
+
+      <!-- selected board detail -->
+      <aside class="board-detail-panel" *ngIf="selectedBoard() as sb; else noBoardSelected">
+
+        <div class="detail-header">
+          <div class="detail-heading-group">
+        <div class="detail-avatar">{{ getInitial(sb.boardName) }}</div>
+
+        <div class="detail-heading">
+          <div class="detail-heading-row">
+            <h2>{{ sb.boardName }}</h2>
+            <button
+              class="btn-members-toggle"
+              [class.btn-members-toggle--open]="showMembersDropdown()"
+              (click)="toggleMembersDropdown($event)"
+              title="Board members"
+            >⌄</button>
+          </div>
+
+          <div class="members-dropdown-backdrop" *ngIf="showMembersDropdown()" (click)="closeMembersDropdown()"></div>
+
+          <div class="members-dropdown" *ngIf="showMembersDropdown()" (click)="$event.stopPropagation()">
+            <div class="members-dropdown-header">
+              <span class="detail-section-label">Members</span>
+              <span class="detail-section-count">{{ panelMembers().length }}</span>
+            </div>
+
+            <div class="detail-members-loading" *ngIf="membersLoading()">
+              <div class="spinner spinner--sm"></div>
+            </div>
+
+            <div class="detail-member-list" *ngIf="!membersLoading() && panelMembers().length">
+              <div class="detail-member-item" *ngFor="let member of panelMembers()">
+                <span class="wc-member-avatar">{{ getInitial(member.userFullName) }}</span>
+                <span class="detail-member-name">{{ member.userFullName }}</span>
+                <span class="role-badge" [class.role-badge--owner]="member.role === 'admin' || member.role === 'owner'">{{ member.role }}</span>
+              </div>
+            </div>
+
+            <p class="detail-empty-hint" *ngIf="!membersLoading() && panelMembers().length === 0">Just you, for now.</p>
+          </div>
+        </div>
+      </div>
+
+          <div class="detail-header-actions">
+            <ng-container *ngIf="!showNewListInput(); else newListFormHeader">
+              <button class="btn-add-list-header" (click)="toggleNewListInput()">
+                + {{ boardLists().length === 0 ? 'Add a list' : 'Add another list' }}
+              </button>
+            </ng-container>
+
+            <ng-template #newListFormHeader>
+              <div class="new-list-form-wrap">
+                <div class="new-list-form-inline">
+                  <input
+                    type="text"
+                    [(ngModel)]="newListName"
+                    placeholder="Enter list name..."
+                    class="list-name-input"
+                    (keyup.enter)="createList()"
+                    (keyup.escape)="toggleNewListInput()"
+                    autofocus
+                  >
+                  <button class="btn-create" (click)="createList()">Add</button>
+                  <button class="btn-cancel" (click)="toggleNewListInput()">✕</button>
+                </div>
+                <p class="list-error-msg" *ngIf="listError()">{{ listError() }}</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+
+        <p class="detail-desc" *ngIf="sb.boardDescription">{{ sb.boardDescription }}</p>
+        <p class="detail-desc no-desc" *ngIf="!sb.boardDescription">No description yet</p>
+
+        <!-- Lists + Cards, full Trello view -->
+        <div class="detail-section">
+          <div class="detail-section-header">
+            <span class="detail-section-label">Lists</span>
+            <span class="detail-section-count" *ngIf="boardLists().length">{{ boardLists().length }}</span>
+          </div>
+
+          <div class="lists-loading" *ngIf="listsLoading()">
+            <div class="spinner spinner--sm"></div>
+          </div>
+
+          <div class="lists-container" cdkDropListGroup *ngIf="!listsLoading()">
+            <div class="list-column" *ngFor="let list of sortedBoardLists()">
+              <div class="list-header">
+                <ng-container *ngIf="editingListId() !== list.id; else editListName">
+                  <h3>{{ list.name }}</h3>
+                  <span class="card-count">{{ list.cards?.length || 0 }}</span>
+                  <div class="list-actions">
+                    <button class="btn-icon" (click)="startEditingList(list, $event)" title="Edit list">✏️</button>
+                    <button class="btn-icon btn-danger" (click)="deleteList(list.id, $event)" title="Delete list">🗑️</button>
+                  </div>
+                </ng-container>
+
+                <ng-template #editListName>
+                  <input type="text" [(ngModel)]="listNameEdit" class="list-name-input" (keyup.enter)="saveListName(list.id)" (keyup.escape)="cancelEditList()" (click)="$event.stopPropagation()" />
+                  <button class="btn-create" (click)="saveListName(list.id)">Save</button>
+                  <button class="btn-cancel" (click)="cancelEditList()">✕</button>
+                </ng-template>
+              </div>
+
+              <p class="list-delete-error-msg" *ngIf="listDeleteError()?.listId === list.id">
+                {{ listDeleteError()?.message }}
+              </p>
+
+              <div class="cards-container" cdkDropList [cdkDropListData]="list.cards || []" (cdkDropListDropped)="drop($event, list.id)">
+                <div class="card" *ngFor="let card of list.cards" cdkDrag [cdkDragData]="card">
+                  <div class="card-labels" *ngIf="card.labels?.length">
+                    <span class="label-dot" *ngFor="let label of card.labels" [style.background-color]="label.color" [title]="label.name"></span>
+                  </div>
+
+                  <div class="card-top" (click)="openCardModal(card)">
+                    <span class="card-title">{{ card.title }}</span>
+                    <span class="card-priority" *ngIf="card.priority" [class]="'card-priority--' + card.priority.toLowerCase()">
+                      {{ card.priority }}
+                    </span>
+                  </div>
+
+                  <div class="card-footer">
+                    <span class="card-assignee">
+                      {{ card.assigneeName ? '👤 ' + card.assigneeName : 'Unassigned' }}
+                    </span>
+                    <span class="card-due" *ngIf="card.dueDate">📅 {{ card.dueDate | date:'mediumDate' }}</span>
+                    <button class="card-reassign-btn" (click)="toggleReassignPicker(card, $event)">Reassign</button>
+                  </div>
+
+                  <div class="card-reassign-backdrop" *ngIf="reassigningCardId() === card.id" (click)="toggleReassignPicker(card, $event)"></div>
+                  <div class="card-reassign-picker" *ngIf="reassigningCardId() === card.id" (click)="$event.stopPropagation()">
+                    <button
+                      *ngFor="let member of panelMembers()"
+                      class="card-reassign-option"
+                      [class.selected]="member.userId === card.assigneeId"
+                      [disabled]="isReassigningInPanel()"
+                      (click)="reassignFromPanel(card, member, $event)"
+                    >
+                      {{ member.userFullName }}
+                    </button>
+                    <p class="detail-empty-hint" *ngIf="panelMembers().length === 0">No board members found.</p>
+                  </div>
+                </div>
+
+                <button class="btn-add-card" (click)="openCreateCardModal(list.id, $event)">
+                  + Add Card
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p class="detail-empty-hint" *ngIf="!listsLoading() && boardLists().length === 0">
+            No lists yet on this board.
+          </p>
+        </div>
+
+        <div class="ws-detail-footer">
+          <span class="member-count">{{ getPanelMemberSummary() }}</span>
+          <span class="member-count">{{ getPanelListSummary() }}</span>
+        </div>
+
+      </aside>
+
+      <ng-template #noBoardSelected>
+        <aside class="board-detail-panel">
+          <div class="detail-empty">
+            <p>Select a board to view it here.</p>
+          </div>
+        </aside>
+      </ng-template>
+
+    </ng-container>
+
   </main>
 
   <!-- Create Board Modal -->
@@ -159,5 +322,51 @@
       </div>
     </div>
   </div>
+
+  <!-- Create Card Modal -->
+  <div class="modal-overlay" *ngIf="showCreateCardModal()" (click)="closeCreateCardModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>New card</h2>
+        <button class="btn-close" (click)="closeCreateCardModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="cardTitle">Title</label>
+          <input type="text" id="cardTitle" class="form-input" placeholder="e.g. Fix login bug" [(ngModel)]="newCardTitle" autofocus>
+        </div>
+
+        <div class="form-group">
+          <label for="cardDescription">Description <span class="optional">(optional)</span></label>
+          <textarea id="cardDescription" class="form-input form-textarea" rows="3" placeholder="Add more detail..." [(ngModel)]="newCardDescription"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cardPriority">Priority <span class="optional">(optional)</span></label>
+            <select id="cardPriority" class="form-input" [ngModel]="newCardPriority()" (ngModelChange)="newCardPriority.set($event)">
+              <option value="">None</option>
+              <option *ngFor="let p of cardPriorities" [value]="p">{{ p }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="cardDueDate">Due date <span class="optional">(optional)</span></label>
+            <input type="date" id="cardDueDate" class="form-input" [(ngModel)]="newCardDueDateInput">
+          </div>
+        </div>
+
+        <div class="error-message" *ngIf="createCardModalError()">{{ createCardModalError() }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeCreateCardModal()">Cancel</button>
+        <button class="btn-create" (click)="submitCreateCard()" [disabled]="!newCardTitle.trim() || creatingCardModal()">
+          {{ creatingCardModal() ? 'Creating...' : 'Create Card' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-card-modal *ngIf="selectedCard()" [card]="selectedCard()!" [boardId]="selectedBoardId()" (save)="onSaveCard($event)" (delete)="onDeleteCard($event)" (close)="closeCardModal()"></app-card-modal>
 
 </div>

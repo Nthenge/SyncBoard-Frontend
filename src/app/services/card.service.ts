@@ -56,14 +56,21 @@ export class CardService {
   }
 
   createCard(request: CreateCardRequest): Observable<Card> {
-    const body = {
+    const body: any = {
       listId: request.listId,
       title: request.title,
       description: request.description,
       priority: request.priority,
-      dueDate: request.dueDate,
       position: request.order
     };
+
+    if (request.dueDate) {
+      const d = request.dueDate;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      body.dueDate = `${y}-${m}-${day}T00:00:00`;
+    }
 
     return this.http.post<any>(`${this.base}/cards`, body).pipe(
       map(response => this.mapCard(response?.data ?? response))
@@ -71,14 +78,19 @@ export class CardService {
   }
 
   updateCard(cardId: string, updates: UpdateCardRequest): Observable<Card> {
-    const body = {
+    const body: any = {
       listId: updates.listId,
       title: updates.title,
       description: updates.description,
       priority: updates.priority,
-      dueDate: updates.dueDate,
       position: updates.order
     };
+
+    if (updates.dueDate === null) {
+      body.clearDueDate = true;
+    } else if (updates.dueDate !== undefined) {
+      body.dueDate = updates.dueDate;
+    }
 
     return this.http.put<any>(`${this.base}/cards/${cardId}`, body).pipe(
       map(response => this.mapCard(response?.data ?? response))

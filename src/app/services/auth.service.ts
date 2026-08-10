@@ -3,23 +3,30 @@ import { Router } from '@angular/router';
 import { User, LoginCredentials, RegisterCredentials, AuthResponse, DeleteAccountResponse } from '../models/auth.models';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { firstValueFrom, Observable, tap } from 'rxjs';
+
+export interface RefreshTokenResponse {
+    success: boolean;
+    message: string;
+    path: string;
+    timestamp: string;
+    data: {
+        token: string;
+        refreshToken: string;
+    };
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
     private currentUserSignal = signal<User | null>(null);
     private tokenSignal = signal<string | null>(null);
+    private refreshTokenSignal = signal<string | null>(null);
     private loadingSignal = signal<boolean>(false);
 
     user = computed(() => this.currentUserSignal());
     isLoggedIn = computed(() => !!this.tokenSignal());
     isLoading = computed(() => this.loadingSignal());
 
-    /**
-     * Role-based auth (JWT claims)
-     * Expected JWT claim examples:
-     * - role: 'admin'
-     * - roles: ['admin']
-     */
     isAdmin(): boolean {
         const token = this.tokenSignal();
         if (!token) return false;
@@ -30,7 +37,6 @@ export class AuthService {
             const roles = payload?.roles;
 
             if (typeof role === 'string' && role.toLowerCase() === 'admin') return true;
-
             if (Array.isArray(roles) && roles.some(r => String(r).toLowerCase() === 'admin')) return true;
 
             return false;
@@ -61,9 +67,12 @@ export class AuthService {
 
     private loadStoredAuth(): void {
         const token = localStorage.getItem('syncboard_token');
+        const refreshToken = localStorage.getItem('syncboard_refresh_token');
         const user = localStorage.getItem('syncboard_user');
+
         if (token && user) {
             this.tokenSignal.set(token);
+            this.refreshTokenSignal.set(refreshToken);
             this.currentUserSignal.set(JSON.parse(user));
         }
     }
@@ -74,18 +83,56 @@ export class AuthService {
             name: `${response.data.firstName} ${response.data.sirName ?? ''}`.trim()
         };
         localStorage.setItem('syncboard_token', response.data.token);
+        if (response.data.refreshToken) {
+            localStorage.setItem('syncboard_refresh_token', response.data.refreshToken);
+            this.refreshTokenSignal.set(response.data.refreshToken);
+        }
         localStorage.setItem('syncboard_user', JSON.stringify(userWithName));
         this.tokenSignal.set(response.data.token);
         this.currentUserSignal.set(userWithName);
     }
 
+    getAccessToken(): string | null {
+        return this.tokenSignal() || localStorage.getItem('syncboard_token');
+    }
+
+    getRefreshToken(): string | null {
+        return this.refreshTokenSignal() || localStorage.getItem('syncboard_refresh_token');
+    }
+
+    /**
+     * Called by the HttpInterceptor when an access token expires (401).
+     * Requests a new token using the saved refreshToken.
+     */
+    refreshToken(): Observable<RefreshTokenResponse> {
+        const refreshToken = this.getRefreshToken();
+        
+        const url = `${environment.apiUrl}${environment.api?.basePath ?? ''}/user/refresh`;
+
+        return this.http.post<RefreshTokenResponse>(url, { refreshToken }).pipe(
+            tap(response => {
+                if (response?.data?.token) {
+                    localStorage.setItem('syncboard_token', response.data.token);
+                    this.tokenSignal.set(response.data.token);
+
+                    if (response.data.refreshToken) {
+                        localStorage.setItem('syncboard_refresh_token', response.data.refreshToken);
+                        this.refreshTokenSignal.set(response.data.refreshToken);
+                    }
+                }
+            })
+        );
+    }
+
     async login(credentials: LoginCredentials): Promise<void> {
         this.loadingSignal.set(true);
         try {
-            const response = await this.http.post<AuthResponse>(
-                `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.login}`,
-                credentials
-            ).toPromise();
+            const response = await firstValueFrom(
+                this.http.post<AuthResponse>(
+                    `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.login}`,
+                    credentials
+                )
+            );
             if (response) {
                 this.saveAuth(response);
                 this.router.navigate(['/workspaces']);
@@ -103,10 +150,12 @@ export class AuthService {
     async register(credentials: RegisterCredentials): Promise<void> {
         this.loadingSignal.set(true);
         try {
-            await this.http.post(
-                `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.register}`,
-                credentials
-            ).toPromise();
+            await firstValueFrom(
+                this.http.post(
+                    `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.register}`,
+                    credentials
+                )
+            );
         } catch (error: any) {
             const backendMessage = error?.error?.message;
             throw new Error(backendMessage || 'Registration failed. Please try again.');
@@ -116,33 +165,29 @@ export class AuthService {
     }
 
     logout(): void {
-        localStorage.removeItem('syncboard_token');
-        localStorage.removeItem('syncboard_user');
-        localStorage.removeItem('registration_complete');
-        localStorage.removeItem('email_verified');
-        localStorage.removeItem('verification_error');
-        this.tokenSignal.set(null);
-        this.currentUserSignal.set(null);
+        this.clearAllAuthData();
         this.router.navigate(['/login']);
     }
 
-   verifyEmail(token: string): Promise<boolean> {
-    return this.http.get<{ success: boolean }>(
-        `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.verifyEmail}?token=${token}`
-    ).toPromise().then(response => {
-        if (response?.success) {
-            localStorage.setItem('email_verified', 'true');
-            localStorage.removeItem('verification_error');
-            return true;
-        } else {
-            localStorage.setItem('verification_error', 'Verification failed');
+    verifyEmail(token: string): Promise<boolean> {
+        return firstValueFrom(
+            this.http.get<{ success: boolean }>(
+                `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.verifyEmail}?token=${token}`
+            )
+        ).then(response => {
+            if (response?.success) {
+                localStorage.setItem('email_verified', 'true');
+                localStorage.removeItem('verification_error');
+                return true;
+            } else {
+                localStorage.setItem('verification_error', 'Verification failed');
+                return false;
+            }
+        }).catch(() => {
+            localStorage.setItem('verification_error', 'Network error during verification');
             return false;
-        }
-    }).catch(() => {
-        localStorage.setItem('verification_error', 'Network error during verification');
-        return false;
-    });
-}
+        });
+    }
 
     isEmailVerified(): boolean {
         return localStorage.getItem('email_verified') === 'true';
@@ -164,10 +209,12 @@ export class AuthService {
     async forgotPassword(email: string): Promise<void> {
         this.loadingSignal.set(true);
         try {
-            await this.http.post(
-                `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.forgotPassword}`,
-                { email }
-            ).toPromise();
+            await firstValueFrom(
+                this.http.post(
+                    `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.forgotPassword}`,
+                    { email }
+                )
+            );
         } catch (error: any) {
             const backendMessage = error?.error?.message;
             throw new Error(backendMessage || 'Could not process request. Please try again.');
@@ -179,10 +226,12 @@ export class AuthService {
     async resetPassword(token: string, newPassword: string): Promise<void> {
         this.loadingSignal.set(true);
         try {
-            await this.http.post(
-                `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.resetPassword}`,
-                { token, newPassword }
-            ).toPromise();
+            await firstValueFrom(
+                this.http.post(
+                    `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.resetPassword}`,
+                    { token, newPassword }
+                )
+            );
         } catch (error: any) {
             const backendMessage = error?.error?.message;
             throw new Error(backendMessage || 'Could not reset password. Please try again.');
@@ -194,10 +243,12 @@ export class AuthService {
     async deleteAccount(password: string): Promise<DeleteAccountResponse> {
         this.loadingSignal.set(true);
         try {
-            const response = await this.http.post<DeleteAccountResponse>(
-                `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.deleteAccount}`,
-                { password }
-            ).toPromise();
+            const response = await firstValueFrom(
+                this.http.post<DeleteAccountResponse>(
+                    `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.deleteAccount}`,
+                    { password }
+                )
+            );
 
             if (response?.success) {
                 this.clearAllAuthData();
@@ -215,11 +266,13 @@ export class AuthService {
 
     private clearAllAuthData(): void {
         localStorage.removeItem('syncboard_token');
+        localStorage.removeItem('syncboard_refresh_token');
         localStorage.removeItem('syncboard_user');
         localStorage.removeItem('registration_complete');
         localStorage.removeItem('email_verified');
         localStorage.removeItem('verification_error');
         this.tokenSignal.set(null);
+        this.refreshTokenSignal.set(null);
         this.currentUserSignal.set(null);
     }
 }

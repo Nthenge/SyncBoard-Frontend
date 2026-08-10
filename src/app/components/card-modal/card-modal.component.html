@@ -75,7 +75,8 @@
         <span *ngIf="card.assigneeName" class="assignee-badge">
           👤 {{ card.assigneeName }}
         </span>
-        <span *ngIf="!card.assigneeName" class="placeholder">Unassigned</span>
+        <span *ngIf="!card.assigneeName" class="placeholder">Unassigned — click to assign</span>
+        <span class="picker-chevron" [class.picker-chevron--open]="showAssigneePicker()">⌄</span>
       </div>
 
       <div class="assignee-picker" *ngIf="showAssigneePicker()">
@@ -94,9 +95,49 @@
 
     <div class="section due-date-section">
       <label>Due Date</label>
-      <div class="due-date-display">
-        <span *ngIf="card.dueDate">📅 {{ card.dueDate | date:'mediumDate' }}</span>
-        <span *ngIf="!card.dueDate" class="placeholder">No due date</span>
+
+      <div class="due-date-display" (click)="toggleDueDatePicker($event)">
+        <span *ngIf="card.dueDate" class="due-date-badge">
+          📅 {{ card.dueDate | date:'mediumDate' }}
+        </span>
+        <span *ngIf="!card.dueDate" class="placeholder">No due date — click to set</span>
+        <span class="picker-chevron" [class.picker-chevron--open]="showDueDatePicker()">⌄</span>
+      </div>
+
+      <div class="due-date-picker-backdrop" *ngIf="showDueDatePicker()" (click)="closeDueDatePicker()"></div>
+
+      <div class="due-date-picker" *ngIf="showDueDatePicker()" (click)="$event.stopPropagation()">
+        <div class="calendar-header">
+          <button class="calendar-nav-btn" (click)="prevMonth()" [disabled]="isUpdatingDueDate()">‹</button>
+          <span class="calendar-month-label">{{ monthLabel() }}</span>
+          <button class="calendar-nav-btn" (click)="nextMonth()" [disabled]="isUpdatingDueDate()">›</button>
+        </div>
+
+        <div class="calendar-weekdays">
+          <span *ngFor="let d of ['S','M','T','W','T','F','S']">{{ d }}</span>
+        </div>
+
+        <div class="calendar-week" *ngFor="let week of calendarWeeks()">
+          <button
+            *ngFor="let day of week"
+            class="calendar-day"
+            [class.calendar-day--outside]="!day.inCurrentMonth"
+            [class.calendar-day--today]="isToday(day.date)"
+            [class.calendar-day--selected]="isSelectedDay(day.date)"
+            [disabled]="isUpdatingDueDate()"
+            (click)="selectDueDate(day.date)"
+          >
+            {{ day.date.getDate() }}
+          </button>
+        </div>
+
+        <div class="calendar-footer" *ngIf="card.dueDate">
+          <button class="calendar-clear-btn" (click)="clearDueDate($event)" [disabled]="isUpdatingDueDate()">
+            Clear date
+          </button>
+        </div>
+
+        <p class="due-date-error-msg" *ngIf="dueDateError()">{{ dueDateError() }}</p>
       </div>
     </div>
 

@@ -209,7 +209,7 @@ export interface UpdateCardRequest {
   order?: number;
   listId?: string | number;
   priority?: CardPriority;
-  dueDate?: Date;
+  dueDate?: Date | null;
 }
 
 export interface MoveCardRequest {

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Card, Label } from '../../models/board.models';
@@ -6,6 +6,11 @@ import { CardService } from '../../services/card.service';
 import { LabelService } from '../../services/label.service';
 import { BoardMemberService } from '../../services/board-member.service';
 import { BoardMemberSummary } from '../../models/board.models';
+
+interface CalendarDay {
+  date: Date;
+  inCurrentMonth: boolean;
+}
 
 @Component({
   selector: 'app-card-modal',
@@ -39,6 +44,15 @@ export class CardModalComponent implements OnInit {
 
   availableLabels = signal<Label[]>([]);
   boardMembers = signal<BoardMemberSummary[]>([]);
+
+  // ─── Due date / calendar state ───────────────────────────────────────────
+
+  showDueDatePicker = signal(false);
+  isUpdatingDueDate = signal(false);
+  dueDateError = signal<string | null>(null);
+  calendarViewDate = signal<Date>(new Date());
+
+  calendarWeeks = computed(() => this.buildCalendarWeeks(this.calendarViewDate()));
 
   ngOnInit(): void {
     if (this.card) {
@@ -159,7 +173,7 @@ export class CardModalComponent implements OnInit {
     });
   }
 
-  // ─── Editing ──────────────────────────────────────────────────────────────
+  // ─── Editing (title/description) ───────────────────────────────────────────
 
   startEditing(): void {
     this.isEditing.set(true);
@@ -171,5 +185,137 @@ export class CardModalComponent implements OnInit {
       this.editDescription = this.card.description || '';
     }
     this.isEditing.set(false);
+  }
+
+  // ─── Due date / calendar ────────────────────────────────────────────────────
+
+  toggleDueDatePicker(event?: Event): void {
+    if (event) event.stopPropagation();
+    if (this.showDueDatePicker()) {
+      this.showDueDatePicker.set(false);
+      return;
+    }
+    const current = this.parseDueDate(this.card?.dueDate) || new Date();
+    this.calendarViewDate.set(new Date(current.getFullYear(), current.getMonth(), 1));
+    this.dueDateError.set(null);
+    this.showDueDatePicker.set(true);
+  }
+
+  closeDueDatePicker(): void {
+    this.showDueDatePicker.set(false);
+  }
+
+  prevMonth(): void {
+    const d = this.calendarViewDate();
+    this.calendarViewDate.set(new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  }
+
+  nextMonth(): void {
+    const d = this.calendarViewDate();
+    this.calendarViewDate.set(new Date(d.getFullYear(), d.getMonth() + 1, 1));
+  }
+
+  monthLabel(): string {
+    return this.calendarViewDate().toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  }
+
+  isSelectedDay(day: Date): boolean {
+    const selected = this.parseDueDate(this.card?.dueDate);
+    return !!selected && this.isSameDay(day, selected);
+  }
+
+  isToday(day: Date): boolean {
+    return this.isSameDay(day, new Date());
+  }
+
+  selectDueDate(day: Date): void {
+    if (!this.card) return;
+    if (this.isUpdatingDueDate()) return;
+
+    this.isUpdatingDueDate.set(true);
+    this.dueDateError.set(null);
+
+    const y = day.getFullYear();
+    const m = String(day.getMonth() + 1).padStart(2, '0');
+    const d = String(day.getDate()).padStart(2, '0');
+    const dueDateString = `${y}-${m}-${d}T00:00:00`;
+
+    this.cardService.updateCard(String(this.card.id), { dueDate: dueDateString as any }).subscribe({
+      next: (updated) => {
+        if (!this.card) return;
+        this.card.dueDate = (updated as any)?.dueDate ?? day;
+        this.isUpdatingDueDate.set(false);
+        this.showDueDatePicker.set(false);
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.isUpdatingDueDate.set(false);
+        this.dueDateError.set(err?.error?.message || 'Failed to update due date.');
+      }
+    });
+  }
+
+  clearDueDate(event: Event): void {
+  event.stopPropagation();
+  if (!this.card) return;
+  if (this.isUpdatingDueDate()) return;
+
+  this.isUpdatingDueDate.set(true);
+  this.dueDateError.set(null);
+
+  this.cardService.updateCard(String(this.card.id), { dueDate: null }).subscribe({
+    next: (updated) => {
+      if (!this.card) return;
+      this.card.dueDate = (updated as any)?.dueDate ?? undefined;
+      this.isUpdatingDueDate.set(false);
+      this.showDueDatePicker.set(false);
+    },
+    error: (err: { error?: { message?: string } }) => {
+      this.isUpdatingDueDate.set(false);
+      this.dueDateError.set(err?.error?.message || 'Failed to clear due date.');
+    }
+  });
+}
+
+  private parseDueDate(value: any): Date | null {
+    if (!value) return null;
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  private isSameDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  private buildCalendarWeeks(viewDate: Date): CalendarDay[][] {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const startWeekday = firstOfMonth.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const cells: CalendarDay[] = [];
+
+    for (let i = startWeekday - 1; i >= 0; i--) {
+      const day = daysInPrevMonth - i;
+      cells.push({ date: new Date(year, month - 1, day), inCurrentMonth: false });
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      cells.push({ date: new Date(year, month, day), inCurrentMonth: true });
+    }
+
+    while (cells.length % 7 !== 0) {
+      const lastDate = cells[cells.length - 1].date;
+      const nextDate = new Date(lastDate);
+      nextDate.setDate(lastDate.getDate() + 1);
+      cells.push({ date: nextDate, inCurrentMonth: false });
+    }
+
+    const weeks: CalendarDay[][] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      weeks.push(cells.slice(i, i + 7));
+    }
+    return weeks;
   }
 }
