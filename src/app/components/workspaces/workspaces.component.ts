@@ -14,6 +14,8 @@ import { CardService } from '../../services/card.service';
 import { BoardList, Card } from '../../models/board.models';
 import { BoardMemberService } from '../../services/board-member.service';
 import { BoardMemberSummary } from '../../models/board.models';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 type ModalStep = 'create' | 'invite';
 
@@ -65,6 +67,10 @@ export class WorkspacesComponent implements OnInit {
   scratchpadText = '';
   allUserBoards = signal<Board[]>([]);
   pendingInvites = signal<MyInvitation[]>([]);
+  scratchpadSaving = signal(false);
+  scratchpadSavedAt = signal<Date | null>(null);
+
+  private scratchpadChange$ = new Subject<string>();
 
   // Cap primary list to 4, remaining go to drawer
   primaryWorkspaces = computed(() => this.filteredWorkspaces().slice(0, 4));
@@ -131,20 +137,13 @@ export class WorkspacesComponent implements OnInit {
   modalStep = signal<ModalStep>('create');
   justCreatedWorkspace = signal<Workspace | null>(null);
 
-  // --- Account Menu State ---
   accountMenuOpen = signal(false);
 
-  // --- Recent Boards (see loadRecentBoards() note in ngOnInit) ---
   recentBoards = signal<RecentBoardSummary[]>([]);
 
-  // --- Card-level state: pinning and the per-card ⋯ menu ---
-  // Pins are local-only for now — see togglePin() for where to persist them.
   pinnedWorkspaceIds = signal<Set<string | number>>(new Set());
   cardMenuOpenId = signal<string | number | null>(null);
 
-  // Counts memberships, not unique people — someone in two workspaces
-  // counts twice. Good enough for a quick-stats chip; swap for a
-  // deduped count (e.g. by email) if you need exact headcount.
   totalMembers = computed(() =>
     this.workspaces().reduce((sum, ws) => sum + (ws.members?.length ?? 0), 0)
   );
@@ -168,10 +167,53 @@ export class WorkspacesComponent implements OnInit {
   currentUserId = computed(() => this.authService.user()?.id ?? null);
 
   ngOnInit(): void {
-    this.loadWorkspaces();
-    // TODO: once you have a BoardService with something like
-    // getRecentBoards(), call it here and this.recentBoards.set(...).
-    // The strip stays hidden automatically while recentBoards() is empty.
+  this.loadWorkspaces();
+  this.loadScratchpad();
+  this.loadRecentBoards();
+
+  this.scratchpadChange$.pipe(
+    debounceTime(1500),
+    distinctUntilChanged()
+  ).subscribe(content => this.saveScratchpad(content));
+}
+
+loadRecentBoards(): void {
+  this.boardService.getRecentBoards(5).subscribe({
+    next: (recent) => this.recentBoards.set(recent),
+    error: () => this.recentBoards.set([])
+  });
+}
+
+loadScratchpad(): void {
+  this.workspaceService.getScratchpad().subscribe({
+    next: (res) => {
+      this.scratchpadText = res?.content ?? '';
+      this.scratchpadSavedAt.set(res?.updatedAt ? new Date(res.updatedAt) : null);
+    },
+    error: () => {} // leave scratchpad empty on failure — non-critical feature
+  });
+}
+
+  onScratchpadInput(value: string): void {
+    this.scratchpadText = value;
+    this.scratchpadChange$.next(value);
+  }
+
+  private saveScratchpad(content: string): void {
+    this.scratchpadSaving.set(true);
+    this.workspaceService.updateScratchpad(content).subscribe({
+      next: (res) => {
+        this.scratchpadSaving.set(false);
+        this.scratchpadSavedAt.set(res?.updatedAt ? new Date(res.updatedAt) : new Date());
+      },
+      error: () => this.scratchpadSaving.set(false)
+    });
+  }
+
+  clearScratchpad(): void {
+    if (!this.scratchpadText.trim()) return; 
+    this.scratchpadText = '';
+    this.scratchpadChange$.next(''); 
   }
 
   loadWorkspaces(): void {
@@ -218,6 +260,9 @@ selectBoard(board: Board): void {
   this.selectedBoardId.set(board.id);
   this.selectedListId.set(null);
   this.loadBoardLists(board.id);
+  this.boardService.trackBoardAccess(board.id).subscribe({
+    next: () => this.loadRecentBoards()
+  });
 }
 
 clearSelectedBoard(): void {
@@ -390,21 +435,22 @@ getMemberRole(member: any): string {
     return this.getMemberLabel(member).charAt(0).toUpperCase();
   }
 
-  // ─── Card: last activity ────────────────────────────────────────────────
-  // Workspace doesn't currently carry an updatedAt/lastActivity field, so
-  // this quietly falls back to null (card shows member count instead) until
-  // your API returns one.
-
-  // Add this computed near your other computed signals
   selectedWorkspace = computed(() =>
     this.workspaces().find(ws => ws.id === this.activeWorkspaceId()) ?? null
   );
 
-  // Add this new method near openWorkspace()
   selectWorkspace(id: string | number): void {
-  this.activeWorkspaceId.set(id);
-  this.loadBoardsForWorkspace(id);
-}
+    this.activeWorkspaceId.set(id);
+    this.loadBoardsForWorkspace(id);
+
+    this.workspaces.update(list => {
+      const idx = list.findIndex(ws => ws.id === id);
+      if (idx <= 0) return list;
+      const target = list[idx];
+      const rest = [...list.slice(0, idx), ...list.slice(idx + 1)];
+      return [target, ...rest];
+    });
+  }
 
   getLastActivityLabel(ws: Workspace): string | null {
     const raw = (ws as any).updatedAt || (ws as any).lastActivityAt || (ws as any).lastActivity;

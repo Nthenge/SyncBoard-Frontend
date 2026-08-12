@@ -803,13 +803,10 @@
   letter-spacing: 0.03em;
 }
 
-/* ─── Recent boards ───────────────────────────────────────────────────── */
-.recent-section { margin-bottom: 2.25rem; }
-
 .recent-heading {
   margin: 0 0 0.7rem;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.52rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -853,14 +850,14 @@
 .recent-card:nth-of-type(4n+4) .recent-card-dot { background: var(--coral); }
 
 .recent-card-name {
-  font-size: 0.86rem;
+  font-size: 0.66rem;
   font-weight: 600;
   color: var(--ink);
 }
 
 .recent-card-meta {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: var(--muted);
 }
 
@@ -2272,7 +2269,7 @@
 .quick-list {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .quick-item {
@@ -2312,6 +2309,40 @@
   height: 100%;
 }
 
+.scratchpad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.scratchpad-header .panel-label {
+  margin: 0;
+}
+
+.btn-clear-scratchpad {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-clear-scratchpad:hover:not(:disabled) {
+  border-color: #C5364C;
+  color: #C5364C;
+}
+
+.btn-clear-scratchpad:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .scratchpad-input {
   width: 100%;
   flex: 1;
@@ -2325,6 +2356,13 @@
   color: var(--ink);
   resize: none;
   outline: none;
+}
+
+.scratchpad-status {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 0.4rem;
 }
 
 .scratchpad-input:focus {

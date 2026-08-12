@@ -134,6 +134,14 @@ export interface BoardList {
   cards: Card[];
 }
 
+export interface RecentBoardSummary {
+  id: number;
+  name: string;
+  workspaceId: number;
+  workspaceName: string;
+  lastAccessedAt?: string;
+}
+
 //  Board 
 
 export interface Board {

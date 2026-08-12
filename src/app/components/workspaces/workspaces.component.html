@@ -159,8 +159,15 @@
           <p class="panel-label">Recent Activity</p>
           <div class="quick-list" *ngIf="recentBoards().length; else emptyRecent">
             <a *ngFor="let b of recentBoards()" class="quick-item" (click)="openBoard(b)">
-              <span class="qi-dot"></span>
-              <span class="qi-text">{{ b.name }}</span>
+              <section class="recent-section" *ngIf="!loading() && recentBoards().length">
+                <div class="recent-strip">
+                  <button class="recent-card" *ngFor="let board of recentBoards()" (click)="openBoard(board)">
+                    <span class="recent-card-dot"></span>
+                    <span class="recent-card-name">{{ board.name }}</span>
+                    <span class="recent-card-meta">{{ board.workspaceName }}</span>
+                  </button>
+                </div>
+              </section>
             </a>
           </div>
           <ng-template #emptyRecent>
@@ -217,12 +224,28 @@
 
         <!-- Tab 6: Scratchpad -->
         <div *ngIf="activeQuickTab() === 'scratchpad'" class="tab-panel scratchpad-panel">
-          <p class="panel-label">Daily Scratchpad</p>
+          <div class="scratchpad-header">
+            <p class="panel-label">Daily Scratchpad</p>
+            <button
+              class="btn-clear-scratchpad"
+              (click)="clearScratchpad()"
+              [disabled]="!scratchpadText.trim()"
+            >
+              Clear
+            </button>
+          </div>
+
           <textarea
             class="scratchpad-input"
             placeholder="Jot down quick thoughts or meeting notes..."
-            [(ngModel)]="scratchpadText"
+            [ngModel]="scratchpadText"
+            (ngModelChange)="onScratchpadInput($event)"
           ></textarea>
+
+          <p class="scratchpad-status" *ngIf="scratchpadSaving()">Saving…</p>
+          <p class="scratchpad-status" *ngIf="!scratchpadSaving() && scratchpadSavedAt()">
+            Saved {{ scratchpadSavedAt() | date:'shortTime' }}
+          </p>
         </div>
 
       </div>
@@ -273,17 +296,6 @@
         <span class="stat-label">Recent board{{ recentBoards().length !== 1 ? 's' : '' }}</span>
       </div>
     </div>
-
-    <section class="recent-section" *ngIf="!loading() && recentBoards().length">
-      <p class="recent-heading">Jump back in</p>
-      <div class="recent-strip">
-        <button class="recent-card" *ngFor="let board of recentBoards()" (click)="openBoard(board)">
-          <span class="recent-card-dot"></span>
-          <span class="recent-card-name">{{ board.name }}</span>
-          <span class="recent-card-meta">{{ board.workspaceName }}</span>
-        </button>
-      </div>
-    </section>
 
     <div class="loading" *ngIf="loading()">
       <div class="spinner"></div>
@@ -379,6 +391,13 @@
   <div class="detail-section-header">
     <span class="detail-section-label">Boards</span>
     <span class="detail-section-count" *ngIf="workspaceBoards().length">{{ workspaceBoards().length }}</span>
+
+    <div class="detail-boards-empty" *ngIf="!boardsLoading() && workspaceBoards().length === 0">
+      <p class="detail-empty-hint">No boards yet in this workspace.</p>
+      <button class="detail-boards-new-btn detail-boards-new-btn--empty" (click)="openCreateBoardModal()">
+        <span class="ghost-plus">+</span> New board
+      </button>
+    </div>
   </div>
 
   <div class="detail-boards-loading" *ngIf="boardsLoading()">

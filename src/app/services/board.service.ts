@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Board, CreateBoardRequest, UpdateBoardRequest } from '../models/board.models';
+import { RecentBoardSummary } from '../models/board.models'; 
 
 @Injectable({
   providedIn: 'root'
@@ -49,5 +50,15 @@ export class BoardService {
 
   deleteBoard(boardId: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/boards/${boardId}`);
+  }
+
+  getRecentBoards(limit = 5): Observable<RecentBoardSummary[]> {
+    return this.http.get<any>(`${this.base}/user/recent-boards?limit=${limit}`).pipe(
+      map(response => response.data ?? response)
+    );
+  }
+
+  trackBoardAccess(boardId: string | number): Observable<void> {
+    return this.http.post<void>(`${this.base}/user/recent-boards/${boardId}`, {});
   }
 }

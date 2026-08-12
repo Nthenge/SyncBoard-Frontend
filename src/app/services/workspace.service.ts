@@ -140,4 +140,14 @@ getMyInvitations(): Observable<MyInvitation[]> {
 rejectInvitation(token: string): Observable<any> {
   return this.rejectInvite(token);
 }
+
+getScratchpad(): Observable<{ content: string; updatedAt: string }> {
+  return this.http.get<any>(`${environment.apiUrl}${environment.api.basePath}/user/scratchpad`)
+    .pipe(map(res => res?.data ?? res));
+}
+
+updateScratchpad(content: string): Observable<{ content: string; updatedAt: string }> {
+  return this.http.put<any>(`${environment.apiUrl}${environment.api.basePath}/user/scratchpad`, { content })
+    .pipe(map(res => res?.data ?? res));
+}
 }
