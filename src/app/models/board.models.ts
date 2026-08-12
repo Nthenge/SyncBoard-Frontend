@@ -12,6 +12,7 @@ export interface Workspace {
     avatar?: string | null;
   };
   members: WorkspaceMember[];
+  isStarred?:boolean;
 }
 
 export interface WorkspaceMember {
@@ -139,7 +140,24 @@ export interface RecentBoardSummary {
   name: string;
   workspaceId: number;
   workspaceName: string;
+  listId?: number;
+  listName?: string;
+  cardId?: number;
+  cardTitle?: string;
   lastAccessedAt?: string;
+}
+
+export interface AssignedCardSummary {
+  cardId: number;
+  cardTitle: string;
+  priority?: CardPriority;
+  dueDate?: string;
+  listId: number;
+  listName: string;
+  boardId: number;
+  boardName: string;
+  workspaceId: number;
+  workspaceName: string;
 }
 
 //  Board 

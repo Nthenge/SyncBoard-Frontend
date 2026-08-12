@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, delay, map } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Card, CreateCardRequest, UpdateCardRequest, MoveCardRequest } from '../models/board.models';
+import { Card, CreateCardRequest, UpdateCardRequest, MoveCardRequest, AssignedCardSummary } from '../models/board.models';
 import { ListService } from './list.service';
 
 @Injectable({
@@ -120,4 +120,10 @@ export class CardService {
   detachLabel(cardId: string | number, labelId: string | number): Observable<void> {
     return this.http.delete<void>(`${this.base}/cards/${cardId}/labels/${labelId}`);
   }
+
+  getAssignedToMe(): Observable<AssignedCardSummary[]> {
+  return this.http.get<any>(`${this.base}/cards/assigned-to-me`).pipe(
+    map(response => response?.data ?? response ?? [])
+  );
+}
 }

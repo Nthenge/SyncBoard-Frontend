@@ -110,12 +110,12 @@
           class="sidebar-tab"
           [class.sidebar-tab--active]="activeQuickTab() === 'recent'"
           (click)="activeQuickTab.set('recent')"
-          title="Recent Boards"
+          title="Recent Activity"
         >🕒</button>
         <button
           class="sidebar-tab"
           [class.sidebar-tab--active]="activeQuickTab() === 'tasks'"
-          (click)="activeQuickTab.set('tasks')"
+          (click)="openTasksTab()"
           title="My Tasks"
         >📥</button>
         <button
@@ -158,16 +158,10 @@
         <div *ngIf="activeQuickTab() === 'recent'" class="tab-panel">
           <p class="panel-label">Recent Activity</p>
           <div class="quick-list" *ngIf="recentBoards().length; else emptyRecent">
-            <a *ngFor="let b of recentBoards()" class="quick-item" (click)="openBoard(b)">
-              <section class="recent-section" *ngIf="!loading() && recentBoards().length">
-                <div class="recent-strip">
-                  <button class="recent-card" *ngFor="let board of recentBoards()" (click)="openBoard(board)">
-                    <span class="recent-card-dot"></span>
-                    <span class="recent-card-name">{{ board.name }}</span>
-                    <span class="recent-card-meta">{{ board.workspaceName }}</span>
-                  </button>
-                </div>
-              </section>
+            <a *ngFor="let b of recentBoards()" class="quick-item" (click)="openRecentActivity(b)">
+              <span class="qi-dot"></span>
+              <span class="qi-text">{{ b.name }}</span>
+              <span class="qi-meta">{{ b.workspaceName }}</span>
             </a>
           </div>
           <ng-template #emptyRecent>
@@ -178,11 +172,12 @@
         <!-- Tab 3: My Tasks (Assigned to logged-in user) -->
         <div *ngIf="activeQuickTab() === 'tasks'" class="tab-panel">
           <p class="panel-label">Assigned to Me</p>
-          <div class="quick-list" *ngIf="myAssignedTasks().length; else emptyTasks">
-            <div class="quick-item" *ngFor="let card of myAssignedTasks()">
+          <div class="quick-list" *ngIf="assignedTasks().length; else emptyTasks">
+            <a class="quick-item" *ngFor="let task of assignedTasks()" (click)="openAssignedTask(task)">
               <span class="qi-check">☐</span>
-              <span class="qi-text">{{ card.title }}</span>
-            </div>
+              <span class="qi-text">{{ task.cardTitle }}</span>
+              <span class="qi-meta">{{ task.boardName }}</span>
+            </a>
           </div>
           <ng-template #emptyTasks>
             <p class="sidebar-empty-hint">No cards assigned to you.</p>
@@ -315,9 +310,9 @@
       <div class="wc-titlebar">
         <div class="wc-avatar">{{ getInitial(ws.workSpaceName) }}</div>
         <span class="wc-name">{{ ws.workSpaceName }}</span>
-
-        <button class="wc-star" [class.wc-star--active]="isPinned(ws)" (click)="togglePin(ws, $event)"
-          [attr.aria-label]="isPinned(ws) ? 'Unpin workspace' : 'Pin workspace'">{{ isPinned(ws) ? '★' : '☆' }}</button>
+        
+        <button class="wc-star" [class.wc-star--active]="ws.isStarred" (click)="toggleStar(ws, $event)"
+          [attr.aria-label]="ws.isStarred ? 'Unstar workspace' : 'Star workspace'">{{ ws.isStarred ? '★' : '☆' }}</button>
 
         <div class="wc-menu-wrap">
           <button class="wc-kebab" (click)="toggleCardMenu(ws.id, $event)" aria-label="Workspace options">⋯</button>
@@ -373,7 +368,38 @@
       <div class="detail-heading-group">
         <div class="detail-avatar">{{ getInitial(ws.workSpaceName) }}</div>
         <div class="detail-heading">
-          <h2>{{ ws.workSpaceName }}</h2>
+          <div class="detail-name-row">
+            <h2>{{ ws.workSpaceName }}</h2>
+
+            <div class="members-dd-wrap">
+              <button
+                class="members-dd-trigger"
+                [class.members-dd-trigger--open]="membersDropdownOpen()"
+                (click)="toggleMembersDropdown($event)"
+              >
+                <span class="members-dd-chevron">⌄</span>
+              </button>
+
+              <div class="members-dd-backdrop" *ngIf="membersDropdownOpen()" (click)="closeMembersDropdown()"></div>
+
+              <div class="members-dd-panel" *ngIf="membersDropdownOpen()" (click)="$event.stopPropagation()">
+                <p class="members-dd-label">Members</p>
+
+                <div class="detail-member-list" *ngIf="ws.members?.length; else noDdMembers">
+                  <div class="detail-member-item" *ngFor="let member of ws.members">
+                    <span class="wc-member-avatar">{{ getMemberInitial(member) }}</span>
+                    <span class="detail-member-name">{{ getMemberLabel(member) }}</span>
+                    <span class="role-badge" [class.role-badge--owner]="getMemberRole(member) === 'Admin'">{{ getMemberRole(member) }}</span>
+                  </div>
+                </div>
+
+                <ng-template #noDdMembers>
+                  <p class="detail-empty-hint">Just you, for now.</p>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+
           <span class="role-badge" [class.role-badge--owner]="getRole(ws) === 'Admin'">{{ getRole(ws) }}</span>
         </div>
       </div>
@@ -498,7 +524,7 @@
   </p>
 
   <div class="detail-cards-scroll">
-    <div class="detail-card-chip" *ngFor="let card of selectedListCards()">
+    <div class="detail-card-chip" [class.detail-card-chip--highlighted]="card.id === highlightedCardId()" *ngFor="let card of selectedListCards()">
       <div class="dcc-top">
         <span class="dcc-title">{{ card.title }}</span>
         <span class="dcc-priority" *ngIf="card.priority" [class]="'dcc-priority--' + card.priority.toLowerCase()">
@@ -543,14 +569,6 @@
 
 <!-- Members and their roles -->
 <div class="detail-section">
-
-  <div class="detail-member-list" *ngIf="ws.members?.length">
-    <div class="detail-member-item" *ngFor="let member of ws.members">
-      <span class="wc-member-avatar">{{ getMemberInitial(member) }}</span>
-      <span class="detail-member-name">{{ getMemberLabel(member) }}</span>
-      <span class="role-badge" [class.role-badge--owner]="getMemberRole(member) === 'Admin'">{{ getMemberRole(member) }}</span>
-    </div>
-  </div>
 </div>
 
   <div class="ws-detail-footer">

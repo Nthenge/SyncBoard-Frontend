@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { WorkspaceService } from '../../services/workspace.service';
 import { AuthService } from '../../services/auth.service';
-import { Workspace, CreateWorkspaceRequest, WorkspaceInvitation, CreateBoardRequest, MyInvitation } from '../../models/board.models';
+import { Workspace, CreateWorkspaceRequest, WorkspaceInvitation,AssignedCardSummary, CreateBoardRequest, MyInvitation } from '../../models/board.models';
 import { BoardService } from '../../services/board.service';
 import { Board } from '../../models/board.models';
 import { RouterLink } from '@angular/router';
@@ -22,10 +22,15 @@ type ModalStep = 'create' | 'invite';
 // Minimal shape for the "Jump back in" strip. Swap this for your real
 // board model once boards are wired up — see loadRecentBoards() below.
 export interface RecentBoardSummary {
-  id: string | number;
+  id: number;
   name: string;
-  workspaceId: string | number;
+  workspaceId: number;
   workspaceName: string;
+  listId?: number;
+  listName?: string;
+  cardId?: number;
+  cardTitle?: string;
+  lastAccessedAt?: string;
 }
 
 @Component({
@@ -69,29 +74,77 @@ export class WorkspacesComponent implements OnInit {
   pendingInvites = signal<MyInvitation[]>([]);
   scratchpadSaving = signal(false);
   scratchpadSavedAt = signal<Date | null>(null);
+  membersDropdownOpen = signal(false);
+  highlightedCardId = signal<string | number | null>(null);
+  assignedTasks = signal<AssignedCardSummary[]>([]);
+  starredBoards = signal<Board[]>([]);
 
   private scratchpadChange$ = new Subject<string>();
 
-  // Cap primary list to 4, remaining go to drawer
   primaryWorkspaces = computed(() => this.filteredWorkspaces().slice(0, 4));
 
   overflowWorkspacesCount = computed(() =>
     Math.max(0, this.filteredWorkspaces().length - 4)
   );
 
-  // Aggregates all loaded cards across current board lists
   allLoadedCards = computed(() => {
     return this.boardLists().flatMap(l => l.cards || []);
   });
 
-  // Dynamic "My Tasks" filtering by current logged-in user ID
+  toggleMembersDropdown(event: Event) {
+    event.stopPropagation();
+    this.membersDropdownOpen.update(v => !v);
+  }
+
+  closeMembersDropdown() {
+    this.membersDropdownOpen.set(false);
+  }
+
+  loadAssignedTasks(): void {
+    this.cardService.getAssignedToMe().subscribe({
+      next: (tasks) => this.assignedTasks.set(tasks),
+      error: () => this.assignedTasks.set([])
+    });
+  }
+
+  openTasksTab(): void {
+    this.activeQuickTab.set('tasks');
+    this.loadAssignedTasks();
+  }
+
+  openAssignedTask(task: AssignedCardSummary): void {
+    this.workspaces.update(list => {
+      const idx = list.findIndex(ws => ws.id === task.workspaceId);
+      if (idx <= 0) return list;
+      const target = list[idx];
+      const rest = [...list.slice(0, idx), ...list.slice(idx + 1)];
+      return [target, ...rest];
+    });
+
+    this.activeWorkspaceId.set(task.workspaceId);
+
+    this.boardsLoading.set(true);
+    this.boardService.getBoardsByWorkspace(String(task.workspaceId)).subscribe({
+      next: (boards) => {
+        this.workspaceBoards.set(boards);
+        this.boardsLoading.set(false);
+
+        const targetBoard = boards.find(b => b.id === task.boardId);
+        if (!targetBoard) return;
+
+        this.selectedBoardId.set(targetBoard.id);
+        this.loadBoardListsAndHighlight(targetBoard.id, task.listId, task.cardId);
+      },
+      error: () => this.boardsLoading.set(false)
+    });
+  }
+
   myAssignedTasks = computed(() => {
     const uid = this.currentUserId();
     if (!uid) return [];
     return this.allLoadedCards().filter(c => String(c.assigneeId) === String(uid));
   });
 
-  // Dynamic "Due Soon" tasks (due in next 48h for logged-in user)
   dueSoonTasks = computed(() => {
     const uid = this.currentUserId();
     const now = new Date().getTime();
@@ -105,9 +158,12 @@ export class WorkspacesComponent implements OnInit {
     });
   });
 
-  starredBoards = computed(() => {
-    return this.allUserBoards().filter(b => b.isStarred);
-  });
+  loadStarredBoards(): void {
+    this.boardService.getStarredBoards().subscribe({
+      next: (boards) => this.starredBoards.set(boards),
+      error: () => this.starredBoards.set([])
+    });
+  }
 
   selectedListCards = computed(() => {
     const list = this.boardLists().find(l => l.id === this.selectedListId());
@@ -140,8 +196,6 @@ export class WorkspacesComponent implements OnInit {
   accountMenuOpen = signal(false);
 
   recentBoards = signal<RecentBoardSummary[]>([]);
-
-  pinnedWorkspaceIds = signal<Set<string | number>>(new Set());
   cardMenuOpenId = signal<string | number | null>(null);
 
   totalMembers = computed(() =>
@@ -170,6 +224,7 @@ export class WorkspacesComponent implements OnInit {
   this.loadWorkspaces();
   this.loadScratchpad();
   this.loadRecentBoards();
+  this.loadStarredBoards();
 
   this.scratchpadChange$.pipe(
     debounceTime(1500),
@@ -339,20 +394,14 @@ getMemberRole(member: any): string {
   }
 }
 
-  // ─── Card: pin toggle ───────────────────────────────────────────────────
-
-  isPinned(ws: Workspace): boolean {
-    return this.pinnedWorkspaceIds().has(ws.id);
-  }
-
-  togglePin(ws: Workspace, event: Event): void {
+  toggleStar(ws: Workspace, event: Event): void {
     event.stopPropagation();
-    this.pinnedWorkspaceIds.update(current => {
-      const next = new Set(current);
-      next.has(ws.id) ? next.delete(ws.id) : next.add(ws.id);
-      return next;
+    const previous = ws.isStarred;
+    ws.isStarred = !previous; 
+    this.workspaceService.starWorkspace(String(ws.id)).subscribe({
+      next: (res) => { ws.isStarred = res.starred; }, 
+      error: () => { ws.isStarred = previous; } 
     });
-    // TODO: persist this, e.g. this.workspaceService.setPinned(ws.id, this.isPinned(ws))
   }
 
   // ─── Card: ⋯ menu ───────────────────────────────────────────────────────
@@ -764,4 +813,68 @@ rejectInvitation(token: string): void {
     error: () => {}
   });
 }
+
+openRecentActivity(recent: RecentBoardSummary): void {
+    this.workspaces.update(list => {
+      const idx = list.findIndex(ws => ws.id === recent.workspaceId);
+      if (idx <= 0) return list;
+      const target = list[idx];
+      const rest = [...list.slice(0, idx), ...list.slice(idx + 1)];
+      return [target, ...rest];
+    });
+
+    this.activeWorkspaceId.set(recent.workspaceId);
+
+    this.boardsLoading.set(true);
+    this.boardService.getBoardsByWorkspace(String(recent.workspaceId)).subscribe({
+      next: (boards) => {
+        this.workspaceBoards.set(boards);
+        this.boardsLoading.set(false);
+
+        const targetBoard = boards.find(b => b.id === recent.id);
+        if (!targetBoard) return;
+
+        this.selectedBoardId.set(targetBoard.id);
+        this.loadBoardListsAndHighlight(targetBoard.id, recent.listId, recent.cardId);
+      },
+      error: () => this.boardsLoading.set(false)
+    });
+  }
+
+  private loadBoardListsAndHighlight(boardId: string | number, targetListId?: number, targetCardId?: number): void {
+    this.listsLoading.set(true);
+    this.boardLists.set([]);
+
+    this.listService.getLists(String(boardId)).subscribe({
+      next: (lists) => {
+        const normalized = Array.isArray(lists)
+          ? lists.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          : [];
+
+        if (!normalized.length) {
+          this.boardLists.set([]);
+          this.listsLoading.set(false);
+          return;
+        }
+
+        forkJoin(normalized.map(list => this.cardService.getCards(list.id))).subscribe({
+          next: (cardsByIndex) => {
+            const merged = normalized.map((list, idx) => ({ ...list, cards: cardsByIndex[idx] || [] }));
+            this.boardLists.set(merged);
+
+            const matchedList = targetListId != null
+              ? merged.find(l => String(l.id) === String(targetListId))
+              : null;
+
+            this.selectedListId.set(matchedList ? matchedList.id : merged[0].id);
+            this.highlightedCardId.set(targetCardId ?? null);
+
+            this.listsLoading.set(false);
+          },
+          error: () => this.listsLoading.set(false)
+        });
+      },
+      error: () => this.listsLoading.set(false)
+    });
+  }
 }

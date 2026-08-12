@@ -21,7 +21,6 @@ export class BoardService {
   }
 
   getBoardsByWorkspace(workspaceId: string): Observable<Board[]> {
-    // Swagger/route mapping: GET /boards/workspace/{workspaceId}
     return this.http.get<any>(`${this.base}/boards/workspace/${workspaceId}`).pipe(
       map(response => response.data ?? response)
     );
@@ -34,7 +33,6 @@ export class BoardService {
       {
         boardName: request.boardName,
         boardDescription: request.boardDescription,
-        // If backend supports board color, send it; otherwise ignored.
         boardColor: request.boardColor,
         isStarred: request.isStarred ?? false
       }
@@ -58,7 +56,24 @@ export class BoardService {
     );
   }
 
-  trackBoardAccess(boardId: string | number): Observable<void> {
-    return this.http.post<void>(`${this.base}/user/recent-boards/${boardId}`, {});
+  trackBoardAccess(boardId: string | number, listId?: string | number, cardId?: string | number): Observable<void> {
+    let url = `${this.base}/user/recent-boards/${boardId}`;
+    const params: string[] = [];
+    if (listId != null) params.push(`listId=${listId}`);
+    if (cardId != null) params.push(`cardId=${cardId}`);
+    if (params.length) url += `?${params.join('&')}`;
+    return this.http.post<void>(url, {});
+  }
+
+  starBoard(boardId: string): Observable<{ starred: boolean }> {
+    return this.http.post<any>(
+      `${environment.apiUrl}${environment.api.basePath}/boards/${boardId}/star`, {}
+    ).pipe(map(res => res?.data ?? res));
+  }
+
+  getStarredBoards(): Observable<Board[]> {
+    return this.http.get<any>(
+      `${environment.apiUrl}${environment.api.basePath}/boards/starred`
+    ).pipe(map(res => res?.data ?? res ?? []));
   }
 }

@@ -150,4 +150,16 @@ updateScratchpad(content: string): Observable<{ content: string; updatedAt: stri
   return this.http.put<any>(`${environment.apiUrl}${environment.api.basePath}/user/scratchpad`, { content })
     .pipe(map(res => res?.data ?? res));
 }
+
+starWorkspace(boardId: string): Observable<{ starred: boolean }> {
+  return this.http.post<any>(
+    `${environment.apiUrl}${environment.api.basePath}/workspace/${boardId}/star`, {}
+  ).pipe(map(res => res?.data ?? res));
+}
+
+getStarredWorkspaces(): Observable<Workspace[]> {
+  return this.http.get<any>(
+    `${environment.apiUrl}${environment.api.basePath}/workspace/starred`
+  ).pipe(map(res => res?.data ?? res ?? []));
+}
 }

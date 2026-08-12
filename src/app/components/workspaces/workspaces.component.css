@@ -861,6 +861,21 @@
   color: var(--muted);
 }
 
+.qi-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.qi-meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--muted);
+}
+
 /* ─── Ghost "create" tile ─────────────────────────────────────────────── */
 .workspace-card--ghost {
   align-items: center;
@@ -1486,6 +1501,81 @@
   margin-bottom: 1.4rem;
 }
 
+.detail-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.members-dd-wrap { position: relative; }
+
+.members-dd-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.members-dd-trigger:hover,
+.members-dd-trigger--open {
+  border-color: var(--accent);
+  background: rgba(79, 70, 229, 0.06);
+}
+
+.members-dd-count {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.members-dd-chevron {
+  font-size: 0.75rem;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+
+.members-dd-trigger--open .members-dd-chevron { transform: rotate(180deg); }
+
+.members-dd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: transparent;
+}
+
+.members-dd-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 240px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 24px 48px -18px rgba(18, 33, 59, 0.35);
+  z-index: 200;
+  padding: 0.6rem;
+  animation: slideUp 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.members-dd-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0.1rem 0.3rem 0.5rem;
+}
+
 .btn-expand {
   flex-shrink: 0;
   display: flex;
@@ -1525,6 +1615,11 @@
 .workspace-card--active {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.detail-card-chip--highlighted {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
 }
 
 /* ═══ Responsive: stack instead of split on small screens ═══ */

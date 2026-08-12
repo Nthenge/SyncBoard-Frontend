@@ -3,10 +3,8 @@ import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { catchError, throwError, switchMap, BehaviorSubject, filter, take } from 'rxjs';
 
-// Flag to track whether a refresh token request is currently in progress
 let isRefreshing = false;
 
-// Subject to queue concurrent failed requests while waiting for the new access token
 const refreshTokenSubject = new BehaviorSubject<string | null>(null);
 
 export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
@@ -20,7 +18,6 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      // 💡 CHANGE: Catch both 401 AND 403 status codes for token refresh
       if ((error.status === 401 || error.status === 403) && !isAuthEndpoint(req.url)) {
         return handle401Error(req, next, authService);
       }
@@ -30,9 +27,6 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   );
 };
 
-/**
- * Helper to clone request with Bearer Authorization header
- */
 function addTokenHeader(request: HttpRequest<unknown>, token: string): HttpRequest<unknown> {
   return request.clone({
     headers: request.headers.set('Authorization', `Bearer ${token}`)
