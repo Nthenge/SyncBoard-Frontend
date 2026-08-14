@@ -50,7 +50,7 @@ export class DeleteAccountComponent {
 
         try {
             const { password } = this.deleteForm.value;
-            await this.authService.deleteAccount(password!);
+            await this.authService.deleteAccount();
             this.success.set(true);
         } catch (err) {
             this.error.set(err instanceof Error ? err.message : 'Failed to delete account. Please check your password.');

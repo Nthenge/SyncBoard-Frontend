@@ -58,6 +58,7 @@ export class WorkspacesComponent implements OnInit {
   sending = signal(false);
   showCreateBoardModal = signal(false);
   newBoardTitle = '';
+  newBoardDescription = '';
   creatingBoard = signal(false);
   createBoardError = signal('');
   selectedBoardId = signal<string | number | null>(null);
@@ -67,7 +68,6 @@ export class WorkspacesComponent implements OnInit {
   reassigningCardId = signal<string | number | null>(null);
   panelBoardMembers = signal<BoardMemberSummary[]>([]);
   isReassigningInPanel = signal(false);
- // --- Quick Access & Drawer Signals ---
   activeQuickTab = signal<'starred' | 'recent' | 'tasks' | 'due' | 'invites' | 'scratchpad'>('starred');
   scratchpadText = '';
   allUserBoards = signal<Board[]>([]);
@@ -78,6 +78,13 @@ export class WorkspacesComponent implements OnInit {
   highlightedCardId = signal<string | number | null>(null);
   assignedTasks = signal<AssignedCardSummary[]>([]);
   starredBoards = signal<Board[]>([]);
+  leaveWorkspaceError = signal('');
+  showEditWorkspaceModal = signal(false);
+  editWorkspaceTarget = signal<Workspace | null>(null);
+  editWorkspaceName = '';
+  editWorkspaceDescription = '';
+  editWorkspaceError = signal('');
+  savingWorkspaceEdit = signal(false);
 
   private scratchpadChange$ = new Subject<string>();
 
@@ -165,6 +172,15 @@ export class WorkspacesComponent implements OnInit {
     });
   }
 
+  starredWorkspaces = signal<Workspace[]>([]);
+
+  loadStarredWorkspaces(): void {
+    this.workspaceService.getStarredWorkspaces().subscribe({
+      next: (workspaces) => this.starredWorkspaces.set(workspaces),
+      error: () => this.starredWorkspaces.set([])
+    });
+  }
+
   selectedListCards = computed(() => {
     const list = this.boardLists().find(l => l.id === this.selectedListId());
     return list?.cards || [];
@@ -225,6 +241,7 @@ export class WorkspacesComponent implements OnInit {
   this.loadScratchpad();
   this.loadRecentBoards();
   this.loadStarredBoards();
+  this.loadStarredWorkspaces();
 
   this.scratchpadChange$.pipe(
     debounceTime(1500),
@@ -384,23 +401,44 @@ getMemberRole(member: any): string {
     this.router.navigate(['/workspaces', id, 'boards']);
   }
 
-  openBoard(board: Board | RecentBoardSummary): void {
-  // Extract workspace ID depending on whether it's a Board or RecentBoardSummary
-  const wsId = 'workSpaceId' in board ? board.workSpaceId : board.workspaceId;
-  
-  if (wsId != null && board.id != null) {
+  openBoard(board: Board): void {
+    const wsId = board.workSpaceId;
+    if (wsId == null || board.id == null) return;
+
+    // Push the owning workspace to the front of the list
+    this.workspaces.update(list => {
+      const idx = list.findIndex(ws => ws.id === wsId);
+      if (idx <= 0) return list;
+      const target = list[idx];
+      const rest = [...list.slice(0, idx), ...list.slice(idx + 1)];
+      return [target, ...rest];
+    });
+
     this.activeWorkspaceId.set(wsId);
-    this.router.navigate(['/workspaces', wsId, 'boards', board.id]);
+
+    this.boardsLoading.set(true);
+    this.boardService.getBoardsByWorkspace(String(wsId)).subscribe({
+      next: (boards) => {
+        this.workspaceBoards.set(boards);
+        this.boardsLoading.set(false);
+
+        const targetBoard = boards.find(b => b.id === board.id);
+        if (!targetBoard) return;
+
+        this.selectedBoardId.set(targetBoard.id);
+        this.loadBoardListsAndHighlight(targetBoard.id); 
+      },
+      error: () => this.boardsLoading.set(false)
+    });
   }
-}
 
   toggleStar(ws: Workspace, event: Event): void {
     event.stopPropagation();
     const previous = ws.isStarred;
-    ws.isStarred = !previous; 
+    ws.isStarred = !previous;
     this.workspaceService.starWorkspace(String(ws.id)).subscribe({
-      next: (res) => { ws.isStarred = res.starred; }, 
-      error: () => { ws.isStarred = previous; } 
+      next: (res) => { ws.isStarred = res.starred; this.loadStarredWorkspaces(); },
+      error: () => { ws.isStarred = previous; }
     });
   }
 
@@ -416,49 +454,81 @@ getMemberRole(member: any): string {
     this.cardMenuOpenId.set(null);
   }
 
-  renameWorkspace(ws: Workspace, event: Event): void {
+  editWorkspace(ws: Workspace, event: Event): void {
     event.stopPropagation();
     this.cardMenuOpenId.set(null);
-    const newName = window.prompt('Rename workspace', ws.workSpaceName);
-    if (!newName || !newName.trim() || newName.trim() === ws.workSpaceName) return;
-    // TODO: call your real update endpoint, e.g.
-    // this.workspaceService.updateWorkspace(ws.id, { workSpaceName: newName.trim() }).subscribe(...)
-    this.workspaces.update(list =>
-      list.map(w => (w.id === ws.id ? { ...w, workSpaceName: newName.trim() } : w))
-    );
+    this.editWorkspaceTarget.set(ws);
+    this.editWorkspaceName = ws.workSpaceName;
+    this.editWorkspaceDescription = ws.workSpaceDescription || '';
+    this.editWorkspaceError.set('');
+    this.showEditWorkspaceModal.set(true);
   }
 
-  openWorkspaceSettings(ws: Workspace, event: Event): void {
-    event.stopPropagation();
-    this.cardMenuOpenId.set(null);
-    this.router.navigate(['/workspaces', ws.id, 'settings']);
+  closeEditWorkspaceModal(): void {
+    this.showEditWorkspaceModal.set(false);
+    this.editWorkspaceTarget.set(null);
+  }
+
+  saveWorkspaceEdit(): void {
+    const target = this.editWorkspaceTarget();
+    if (!target || !this.editWorkspaceName.trim()) return;
+
+    this.savingWorkspaceEdit.set(true);
+    this.editWorkspaceError.set('');
+
+    this.workspaceService.updateWorkspace(target.id, {
+      workSpaceName: this.editWorkspaceName.trim(),
+      workSpaceDescription: this.editWorkspaceDescription.trim() || undefined
+    }).subscribe({
+      next: (updated) => {
+        this.workspaces.update(list =>
+          list.map(w => (w.id === updated.id ? updated : w))
+        );
+        this.savingWorkspaceEdit.set(false);
+        this.closeEditWorkspaceModal();
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.savingWorkspaceEdit.set(false);
+        this.editWorkspaceError.set(err?.error?.message || 'Failed to update workspace. Please try again.');
+      }
+    });
   }
 
   leaveWorkspace(ws: Workspace, event: Event): void {
     event.stopPropagation();
     this.cardMenuOpenId.set(null);
-    const confirmed = window.confirm(
-      `Leave "${ws.workSpaceName}"? You'll lose access unless someone re-invites you.`
-    );
-    if (!confirmed) return;
-    // TODO: call this.workspaceService.leaveWorkspace(ws.id) and only update
-    // the local list once that request actually succeeds.
-    this.workspaces.update(list => list.filter(w => w.id !== ws.id));
-  }
+    this.leaveWorkspaceError.set('');
 
-  // ─── Card: role badge ───────────────────────────────────────────────────
-  // Workspace doesn't currently carry a `role` or `ownerId` field, so this
-  // falls back to 'Member' until your model/API exposes one. Wire the two
-  // commented lines below to real fields once available.
+    this.workspaceService.leaveWorkspace(ws.id).subscribe({
+      next: () => {
+        this.workspaces.update(list => list.filter(w => w.id !== ws.id));
+
+        if (this.activeWorkspaceId() === ws.id) {
+          this.activeWorkspaceId.set(null);
+          this.workspaceBoards.set([]);
+          this.clearSelectedBoard();
+        }
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.leaveWorkspaceError.set(err?.error?.message || 'Failed to leave workspace. Please try again.');
+        setTimeout(() => this.leaveWorkspaceError.set(''), 4000);
+      }
+    });
+  }
 
   getRole(ws: Workspace): string {
-  const anyWs = ws as any;
-  if (anyWs.owner?.id != null && this.currentUserId() != null && anyWs.owner.id === this.currentUserId()) {
-    return 'Admin';
+    const anyWs = ws as any;
+    const uid = this.currentUserId();
+
+    if (uid != null && anyWs.owner?.id === uid && anyWs.owner?.role) {
+      return this.formatRole(anyWs.owner.role);
+    }
+
+    const member = anyWs.members?.find((m: any) => m?.id === uid);
+    if (member?.role) return this.formatRole(member.role);
+
+    return 'Member';
   }
-  if (anyWs.role) return this.formatRole(anyWs.role);
-  return 'Member';
-}
 
   private formatRole(role: string): string {
     return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
@@ -545,10 +615,16 @@ getMemberRole(member: any): string {
   // TODO: wire this up once there's a notifications endpoint/panel.
 }
 
+  inviteToWorkspace(ws: Workspace, event: Event): void {
+    event.stopPropagation();
+    this.cardMenuOpenId.set(null);
+    this.resetModal();
+    this.justCreatedWorkspace.set(ws);
+    this.modalStep.set('invite');
+    this.showModal.set(true);
+  }
+
   openInviteFlow(): void {
-    // Reuse the existing invite step, targeting whichever workspace is
-    // currently active. Falls back to starting a new workspace if the
-    // person hasn't opened one yet this session.
     const activeId = this.activeWorkspaceId();
     const activeWorkspace = activeId != null
       ? this.workspaces().find(ws => ws.id === activeId)
@@ -603,6 +679,7 @@ getMemberRole(member: any): string {
 
   openCreateBoardModal(): void {
   this.newBoardTitle = '';
+  this.newBoardDescription = '';
   this.createBoardError.set('');
   this.showCreateBoardModal.set(true);
 }
@@ -610,6 +687,7 @@ getMemberRole(member: any): string {
 closeCreateBoardModal(): void {
   this.showCreateBoardModal.set(false);
   this.newBoardTitle = '';
+  this.newBoardDescription = '';
   this.createBoardError.set('');
 }
 
@@ -622,6 +700,7 @@ createBoardInline(): void {
 
   const request: CreateBoardRequest = {
     boardName: this.newBoardTitle.trim(),
+    boardDescription: this.newBoardDescription.trim() || undefined,
     workSpaceId: ws.id
   };
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { FAQ } from '../models/board.models';
 
@@ -13,6 +13,11 @@ export class FaqService {
   constructor(private http: HttpClient) {}
 
   getActiveFaqs(): Observable<FAQ[]> {
-    return this.http.get<FAQ[]>(`${this.base}/faqs/active`);
+    return this.http.get<any>(`${this.base}/faqs/active`).pipe(
+      map(response => {
+        const raw = response?.data ?? response ?? [];
+        return Array.isArray(raw) ? raw : [];
+      })
+    );
   }
 }

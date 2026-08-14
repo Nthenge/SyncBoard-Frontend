@@ -1,5 +1,9 @@
 <div class="workspaces-container">
 
+  <div class="ws-toast ws-toast--error" *ngIf="leaveWorkspaceError()">
+              {{ leaveWorkspaceError() }}
+            </div>
+
   <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
   <aside class="ws-sidebar">
 
@@ -30,9 +34,6 @@
           <div class="account-menu-section">
             <button class="account-menu-item" (click)="closeAccountMenu()">
               <span class="ami-icon">⚙</span> Settings
-            </button>
-            <button class="account-menu-item" (click)="closeAccountMenu()">
-              <span class="ami-icon">👥</span> Invite members
             </button>
           </div>
 
@@ -141,18 +142,29 @@
       <div class="tab-content">
 
         <!-- Tab 1: Starred -->
-        <div *ngIf="activeQuickTab() === 'starred'" class="tab-panel">
-          <p class="panel-label">Starred Boards</p>
-          <div class="quick-list" *ngIf="starredBoards().length; else emptyStarred">
-            <a *ngFor="let board of starredBoards()" class="quick-item" (click)="openBoard(board)">
-              <span class="qi-star">★</span>
-              <span class="qi-text">{{ board.boardName }}</span>
-            </a>
-          </div>
-          <ng-template #emptyStarred>
-            <p class="sidebar-empty-hint">No starred boards yet.</p>
-          </ng-template>
+      <div *ngIf="activeQuickTab() === 'starred'" class="tab-panel">
+        <p class="panel-label">Starred Workspaces</p>
+        <div class="quick-list" *ngIf="starredWorkspaces().length; else emptyStarredWs">
+          <a *ngFor="let ws of starredWorkspaces()" class="quick-item" (click)="selectWorkspace(ws.id)">
+            <span class="qi-star">★</span>
+            <span class="qi-text">{{ ws.workSpaceName }}</span>
+          </a>
         </div>
+        <ng-template #emptyStarredWs>
+          <p class="sidebar-empty-hint">No starred workspaces yet.</p>
+        </ng-template>
+
+        <p class="panel-label" style="margin-top: 0.9rem;">Starred Boards</p>
+        <div class="quick-list" *ngIf="starredBoards().length; else emptyStarred">
+          <a *ngFor="let board of starredBoards()" class="quick-item" (click)="openBoard(board)">
+            <span class="qi-star">★</span>
+            <span class="qi-text">{{ board.boardName }}</span>
+          </a>
+        </div>
+        <ng-template #emptyStarred>
+          <p class="sidebar-empty-hint">No starred boards yet.</p>
+        </ng-template>
+      </div>
 
         <!-- Tab 2: Recent -->
         <div *ngIf="activeQuickTab() === 'recent'" class="tab-panel">
@@ -318,8 +330,8 @@
           <button class="wc-kebab" (click)="toggleCardMenu(ws.id, $event)" aria-label="Workspace options">⋯</button>
           <div class="wc-menu-backdrop" *ngIf="cardMenuOpenId() === ws.id" (click)="closeCardMenuBackdrop($event)"></div>
           <div class="wc-menu" *ngIf="cardMenuOpenId() === ws.id" (click)="$event.stopPropagation()">
-            <button class="wc-menu-item" (click)="renameWorkspace(ws, $event)">Rename</button>
-            <button class="wc-menu-item" (click)="openWorkspaceSettings(ws, $event)">Workspace settings</button>
+            <button class="wc-menu-item" (click)="editWorkspace(ws, $event)">Edit workspace</button>
+            <button class="wc-menu-item" *ngIf="getRole(ws) === 'Admin'" (click)="inviteToWorkspace(ws, $event)">Invite members</button>
             <div class="wc-menu-divider"></div>
             <button class="wc-menu-item wc-menu-item--danger" (click)="leaveWorkspace(ws, $event)">Leave workspace</button>
           </div>
@@ -477,6 +489,15 @@
             autofocus
           >
         </div>
+        <div class="form-group">
+          <label>Description <span class="optional">(optional)</span></label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="What is this board for?"
+            [(ngModel)]="newBoardDescription"
+          >
+        </div>
         <div class="error-msg" *ngIf="createBoardError()">{{ createBoardError() }}</div>
       </div>
       <div class="modal-footer">
@@ -588,12 +609,6 @@
 
 </div>
   </main>
-
-  <!-- ══════════════════════════════════════════════════════════════════
-       Two-Step Modal
-       Step 1 — Create Workspace
-       Step 2 — Invite Members
-  ═══════════════════════════════════════════════════════════════════ -->
   <div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()">
     <div class="modal" (click)="$event.stopPropagation()">
 
@@ -668,7 +683,7 @@
             <div class="ws-badge-avatar">{{ getInitial(ws.workSpaceName) }}</div>
             <div>
               <strong>{{ ws.workSpaceName }}</strong>
-              <p class="badge-sub">Invite teammates to this workspace — they'll be able to create and collaborate on boards.</p>
+              <p class="badge-sub">Invite teammates to this workspace. They'll be able to create and collaborate on boards.</p>
             </div>
           </div>
 
@@ -727,8 +742,8 @@
 
           <!-- Role explanation -->
           <div class="role-hint">
-            <strong>Member</strong> — can create boards and collaborate. &nbsp;
-            <strong>Admin</strong> — can also manage members.
+            <strong>Admin</strong> Has overall authority on that workspace. &nbsp; <br>
+            <strong>Member</strong> Can view worspaces, boards, list and move cards. 
           </div>
 
         </div>
@@ -745,7 +760,47 @@
           </button>
         </div>
       </ng-container>
+    </div>
+  </div>
 
+  <!-- Edit workspace modal -->
+  <div class="modal-overlay" *ngIf="showEditWorkspaceModal()" (click)="closeEditWorkspaceModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Edit workspace</h2>
+        <button class="btn-close" (click)="closeEditWorkspaceModal()" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Workspace name</label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="editWorkspaceName"
+            (keyup.enter)="saveWorkspaceEdit()"
+            autofocus
+          >
+        </div>
+        <div class="form-group">
+          <label>Description <span class="optional">(optional)</span></label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="editWorkspaceDescription"
+          >
+        </div>
+        <div class="error-msg" *ngIf="editWorkspaceError()">{{ editWorkspaceError() }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeEditWorkspaceModal()">Cancel</button>
+        <button
+          class="btn-confirm"
+          (click)="saveWorkspaceEdit()"
+          [disabled]="!editWorkspaceName.trim() || savingWorkspaceEdit()"
+        >
+          {{ savingWorkspaceEdit() ? 'Saving…' : 'Save changes' }}
+        </button>
+      </div>
     </div>
   </div>
 

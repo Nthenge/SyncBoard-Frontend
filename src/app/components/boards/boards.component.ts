@@ -343,6 +343,12 @@ cardPriorities: CardPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
   toggleStar(board: Board, event: Event): void {
     event.stopPropagation();
+    const previous = board.isStarred;
+    board.isStarred = !previous; 
+    this.boardService.starBoard(String(board.id)).subscribe({
+      next: (res) => { board.isStarred = res.starred; }, 
+      error: () => { board.isStarred = previous; } 
+    });
   }
 
   getPanelMemberSummary(): string {

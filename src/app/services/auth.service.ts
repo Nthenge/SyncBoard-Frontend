@@ -223,6 +223,92 @@ export class AuthService {
         }
     }
 
+    async updateProfile(update: { firstName?: string; sirName?: string; email?: string; avatarUrl?: string; password?: string }): Promise<void> {
+    this.loadingSignal.set(true);
+    const token = this.getAccessToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const current = this.currentUserSignal();
+    const payload = {
+        firstName: update.firstName ?? current?.firstName ?? '',
+        sirName: update.sirName ?? current?.sirName ?? '',
+        email: update.email ?? current?.email ?? '',
+        avatarUrl: update.avatarUrl ?? (current as any)?.avatarUrl ?? '',
+        password: update.password ?? ''
+    };
+
+    try {
+        const response = await firstValueFrom(
+            this.http.put<{ data: any }>(
+                `${environment.apiUrl}${environment.api?.basePath ?? ''}/user/update`,
+                payload,
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+        );
+
+        const updated = response?.data;
+        if (updated) {
+            const userWithName = {
+                ...current,
+                ...updated,
+                name: `${updated.firstName ?? current?.firstName ?? ''} ${updated.sirName ?? current?.sirName ?? ''}`.trim()
+            };
+            localStorage.setItem('syncboard_user', JSON.stringify(userWithName));
+            this.currentUserSignal.set(userWithName as User);
+        }
+    } catch (error: any) {
+        const backendMessage = error?.error?.message;
+        throw new Error(backendMessage || 'Could not update profile. Please try again.');
+    } finally {
+        this.loadingSignal.set(false);
+    }
+}
+
+async deleteAccount(): Promise<{ success: boolean; message: string }> {
+    this.loadingSignal.set(true);
+    const token = this.getAccessToken();
+    if (!token) throw new Error('Not authenticated');
+
+    try {
+        const response = await firstValueFrom(
+            this.http.delete<{ success: boolean; message: string }>(
+                `${environment.apiUrl}${environment.api?.basePath ?? ''}/user/delete`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+        );
+
+        this.clearAllAuthData();
+        this.router.navigate(['/login']);
+
+        return response || { success: true, message: 'Account deleted successfully' };
+    } catch (error: any) {
+        const backendMessage = error?.error?.message;
+        throw new Error(backendMessage || 'Could not delete account. Please try again.');
+    } finally {
+        this.loadingSignal.set(false);
+    }
+}
+
+async uploadAvatar(file: File): Promise<string> {
+    const token = this.getAccessToken();
+    if (!token) throw new Error('Not authenticated');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await firstValueFrom(
+        this.http.post<{ data: { url: string } }>(
+            `${environment.apiUrl}${environment.api?.basePath ?? ''}/user/avatar`,
+            formData,
+            { headers: { Authorization: `Bearer ${token}` } }
+        )
+    );
+
+    const url = response?.data?.url;
+    if (!url) throw new Error('Upload succeeded but no URL was returned.');
+    return url;
+}
+
     async resetPassword(token: string, newPassword: string): Promise<void> {
         this.loadingSignal.set(true);
         try {
@@ -235,30 +321,6 @@ export class AuthService {
         } catch (error: any) {
             const backendMessage = error?.error?.message;
             throw new Error(backendMessage || 'Could not reset password. Please try again.');
-        } finally {
-            this.loadingSignal.set(false);
-        }
-    }
-
-    async deleteAccount(password: string): Promise<DeleteAccountResponse> {
-        this.loadingSignal.set(true);
-        try {
-            const response = await firstValueFrom(
-                this.http.post<DeleteAccountResponse>(
-                    `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.deleteAccount}`,
-                    { password }
-                )
-            );
-
-            if (response?.success) {
-                this.clearAllAuthData();
-                this.router.navigate(['/login']);
-            }
-
-            return response || { success: false, message: 'Failed to delete account' };
-        } catch (error: any) {
-            const backendMessage = error?.error?.message;
-            throw new Error(backendMessage || 'Could not delete account. Please try again.');
         } finally {
             this.loadingSignal.set(false);
         }

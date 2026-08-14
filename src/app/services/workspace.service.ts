@@ -69,7 +69,12 @@ export class WorkspaceService {
 inviteMember(request: SendWorkspaceInvitationRequest): Observable<WorkspaceInvitationResponse> {
   return this.http.post<WorkspaceInvitationResponse>(
     `${this.base}/workspace/${request.workSpaceId}/invite`,
-    { email: request.invitations.map(i => i.email) }
+    {
+      invitations: request.invitations.map(i => ({
+        email: i.email,
+        role: i.role.toUpperCase()
+      }))
+    }
   );
 }
 
@@ -161,5 +166,16 @@ getStarredWorkspaces(): Observable<Workspace[]> {
   return this.http.get<any>(
     `${environment.apiUrl}${environment.api.basePath}/workspace/starred`
   ).pipe(map(res => res?.data ?? res ?? []));
+}
+leaveWorkspace(workspaceId: string | number): Observable<any> {
+  return this.http.post<any>(
+    `${this.base}/workspace/${workspaceId}/leave`,
+    {}
+  ).pipe(map(res => res?.data ?? res));
+}
+updateWorkspace(workspaceId: string | number, request: CreateWorkspaceRequest): Observable<Workspace> {
+  return this.http.put<any>(`${this.base}/workspace/${workspaceId}`, request).pipe(
+    map(response => response.data)
+  );
 }
 }

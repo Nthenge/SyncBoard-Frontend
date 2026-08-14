@@ -1481,13 +1481,14 @@ select.form-input {
 
 .board-list-item .btn-star {
   position: static;
-  opacity: 0;
+  opacity: 1;
   background: none;
+  color: var(--line);
   flex-shrink: 0;
 }
 
 .board-list-item:hover .btn-star,
-.board-list-item .btn-star.starred { opacity: 1; }
+.board-list-item .btn-star.starred { color: var(--amber); }
 
 .board-list-item--create {
   border: 1.5px dashed var(--line);

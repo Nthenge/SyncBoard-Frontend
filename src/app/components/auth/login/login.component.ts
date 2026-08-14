@@ -19,7 +19,7 @@ export class LoginComponent implements OnInit {
     @Input() isModal = false;
     @Output() closeModal = new EventEmitter<void>();
 
-    @Output() switchToRegister = new EventEmitter<void>();
+    @Output() switchToRegister = new EventEmitter<string>();
     @Output() switchToForgot = new EventEmitter<void>();
 
     @HostBinding('class.is-modal') get modalClass() { return this.isModal; }
@@ -76,7 +76,19 @@ export class LoginComponent implements OnInit {
             }
             this.router.navigate(['/workspaces']);
         } catch (err) {
-            this.error.set(err instanceof Error ? err.message : 'Login failed');
+            const message = err instanceof Error ? err.message : 'Login failed';
+
+            if (message.toLowerCase().includes('please register')) {
+                const enteredEmail = this.loginForm.value.email ?? '';
+                if (this.isModal) {
+                    this.switchToRegister.emit(enteredEmail);
+                } else {
+                    this.router.navigate(['/register'], { queryParams: { email: enteredEmail } });
+                }
+                return;
+            }
+
+            this.error.set(message);
         } finally {
             this.loading.set(false);
         }

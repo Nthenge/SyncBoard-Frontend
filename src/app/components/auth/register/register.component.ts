@@ -1,8 +1,6 @@
-// src/app/components/auth/register/register.component.ts
-
 import { Component, inject, signal, computed, OnInit, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { AuthService } from '../../../services/auth.service';
 
@@ -17,8 +15,10 @@ export class RegisterComponent implements OnInit {
     private fb = inject(FormBuilder);
     private authService = inject(AuthService);
     private router = inject(Router);
+    private route = inject(ActivatedRoute);
 
     @Input() isModal = false;
+    @Input() prefillEmail = '';
     @Output() closeModal = new EventEmitter<void>();
     @Output() switchToLogin = new EventEmitter<void>();
 
@@ -35,6 +35,13 @@ export class RegisterComponent implements OnInit {
 
     ngOnInit(): void {
         this.initForm();
+
+        const emailFromQuery = this.route.snapshot.queryParamMap.get('email');
+        const prefill = this.prefillEmail || emailFromQuery || '';
+        if (prefill) {
+            this.registerForm.patchValue({ email: prefill });
+        }
+
         if (this.authService.isLoggedIn()) {
             this.router.navigate(['/workspaces']);
         }

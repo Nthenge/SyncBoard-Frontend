@@ -1,0 +1,392 @@
+<div class="settings-container">
+
+  <header class="settings-topbar">
+    <button class="btn-back" (click)="goBack()">← Back to Workspaces</button>
+    <h1>Settings</h1>
+  </header>
+
+  <div class="settings-split">
+
+    <!-- LEFT: section tabs -->
+    <nav class="settings-nav">
+      <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'support'" (click)="selectSection('support')">
+        <span class="sni-icon">💬</span> Support
+      </button>
+      <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'faq'" (click)="selectSection('faq')">
+        <span class="sni-icon">❓</span> FAQ
+      </button>
+      <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'account'" (click)="selectSection('account')">
+        <span class="sni-icon">👤</span> Account
+      </button>
+      <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'notifications'" (click)="selectSection('notifications')">
+        <span class="sni-icon">🔔</span> Notifications
+      </button>
+      <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'workspaces'" (click)="selectSection('workspaces')">
+        <span class="sni-icon">🗂️</span> Workspace management
+      </button>
+      <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'boards'" (click)="selectSection('boards')">
+        <span class="sni-icon">📋</span> Board management
+      </button>
+
+      <div class="settings-nav-divider"></div>
+
+      <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'terms'" (click)="selectSection('terms')">
+        <span class="sni-icon">📄</span> Terms of Service
+      </button>
+      <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'privacy'" (click)="selectSection('privacy')">
+        <span class="sni-icon">🔒</span> Privacy Policy
+      </button>
+      <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'security'" (click)="selectSection('security')">
+        <span class="sni-icon">🛡️</span> Security
+      </button>
+    </nav>
+
+    <!-- RIGHT: section content -->
+    <div class="settings-content">
+
+      <!-- ═══ SUPPORT (Contact only) ═══ -->
+      <section *ngIf="activeSection() === 'support'" class="settings-section">
+        <h2 class="settings-section-title">Support</h2>
+        <p class="settings-section-sub">Need help? Send us a message and we'll get back to you.</p>
+
+        <div class="support-block">
+          <div class="talk-success" *ngIf="talkSuccess()">
+            <div class="talk-success-icon">✉️</div>
+            <h4>Message sent!</h4>
+            <p>Our support team will get back to you soon.</p>
+            <button class="btn-cancel" (click)="sendAnother()">Send another message</button>
+          </div>
+
+          <form class="talk-form" *ngIf="!talkSuccess()" (ngSubmit)="submitTalk()">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Your name</label>
+                <input type="text" class="form-input" [(ngModel)]="talkForm.fullName" name="fullName" placeholder="Jane Doe">
+              </div>
+              <div class="form-group">
+                <label>Contact email</label>
+                <input type="email" class="form-input" [(ngModel)]="talkForm.email" name="email" placeholder="jane@example.com">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Issue type</label>
+              <div class="chip-picker">
+                <button
+                  type="button"
+                  *ngFor="let issue of issues()"
+                  class="chip-option"
+                  [class.chip-option--active]="talkForm.issueId === issue.id"
+                  (click)="talkForm.issueId = issue.id"
+                >
+                  {{ issue.name }}
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Message</label>
+              <textarea class="form-input form-textarea" rows="4" [(ngModel)]="talkForm.message" name="message" placeholder="Tell us how we can help..."></textarea>
+            </div>
+
+            <div class="error-message" *ngIf="talkError()">{{ talkError() }}</div>
+
+            <button type="submit" class="btn-create" [disabled]="talkSubmitting()">
+              {{ talkSubmitting() ? 'Sending...' : 'Send message' }}
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ═══ FAQ ═══ -->
+      <section *ngIf="activeSection() === 'faq'" class="settings-section">
+        <h2 class="settings-section-title">Frequently asked questions</h2>
+        <p class="settings-section-sub">Quick answers to common questions.</p>
+
+        <div class="faq-loading" *ngIf="faqsLoading()">
+          <div class="spinner spinner--sm"></div>
+        </div>
+
+        <div class="faq-list" *ngIf="!faqsLoading() && faqs().length">
+          <div class="faq-item" *ngFor="let faq of faqs()">
+            <button class="faq-question" (click)="toggleFaq(faq)">
+              <span>{{ faq.question }}</span>
+              <span class="faq-chevron" [class.faq-chevron--open]="expandedFaqId() === faq.id">⌄</span>
+            </button>
+            <div class="faq-answer" *ngIf="expandedFaqId() === faq.id">
+              <p>{{ faq.answer }}</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="settings-empty-hint" *ngIf="!faqsLoading() && faqs().length === 0">
+          No FAQs available right now.
+        </p>
+      </section>
+
+      <!-- ═══ ACCOUNT ═══ -->
+<section *ngIf="activeSection() === 'account'" class="settings-section">
+  <h2 class="settings-section-title">Account</h2>
+  <p class="settings-section-sub">Manage your profile and account details.</p>
+
+  <div class="account-block">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>First name</label>
+        <input type="text" class="form-input" [(ngModel)]="accountForm.firstName" name="account-first-name" autocomplete="off">
+        </div>
+        <div class="form-group">
+        <label>Surname</label>
+        <input type="text" class="form-input" [(ngModel)]="accountForm.sirName" name="account-sir-name" autocomplete="off">
+        </div>
+    </div>
+
+    <div class="form-group">
+  <label>Email</label>
+  <input type="email" class="form-input form-input--readonly" [value]="accountForm.email" readonly disabled>
+</div>
+
+<div class="form-group">
+  <label>Profile picture</label>
+  <div class="avatar-upload-row">
+    <div class="avatar-preview">
+      <img *ngIf="accountForm.avatarUrl" [src]="accountForm.avatarUrl" alt="Avatar preview">
+      <span *ngIf="!accountForm.avatarUrl" class="avatar-preview-placeholder">{{ accountForm.firstName ? accountForm.firstName.charAt(0).toUpperCase() : '?' }}</span>
+    </div>
+    <div class="avatar-upload-controls">
+      <label class="btn-cancel avatar-upload-btn">
+        {{ avatarUploading() ? 'Uploading...' : 'Choose photo' }}
+        <input type="file" accept="image/*" (change)="onAvatarFileSelected($event)" [disabled]="avatarUploading()" hidden>
+      </label>
+      <p class="avatar-error" *ngIf="avatarError()">{{ avatarError() }}</p>
+    </div>
+  </div>
+</div>
+
+    <div class="settings-nav-divider"></div>
+
+    <h3 class="account-subheading">Change password</h3>
+    <p class="settings-section-sub">Leave blank to keep your current password.</p>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>New password</label>
+        <input type="password" class="form-input" [(ngModel)]="accountForm.newPassword" name="account-new-password" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+        <label>Confirm new password</label>
+        <input type="password" class="form-input" [(ngModel)]="accountForm.confirmPassword" name="account-confirm-password" autocomplete="new-password">
+        </div>
+    </div>
+
+    <div class="error-message" *ngIf="accountError()">{{ accountError() }}</div>
+    <div class="account-success" *ngIf="accountSuccess()">✓ {{ accountSuccess() }}</div>
+
+    <button class="btn-create" (click)="saveAccount()" [disabled]="accountSaving()">
+      {{ accountSaving() ? 'Saving...' : 'Save changes' }}
+    </button>
+
+    <div class="settings-nav-divider"></div>
+
+    <h3 class="account-subheading account-subheading--danger">Danger zone</h3>
+    <p class="settings-section-sub">Deleting your account is permanent and cannot be undone.</p>
+    <button class="btn-delete-account" (click)="openDeleteConfirm()">Delete my account</button>
+
+  </div>
+</section>
+
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" *ngIf="showDeleteConfirm()" (click)="closeDeleteConfirm()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header"><button class="btn-delete-account" (click)="openDeleteConfirm()">
+        Delete my account
+    </button>
+    </div>
+    <div class="modal-body">
+      <p>This will permanently delete your account and remove your access to all workspaces. This cannot be undone.</p>
+      <div class="error-message" *ngIf="deleteError()">{{ deleteError() }}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeDeleteConfirm()">Cancel</button>
+      <button class="btn-delete-confirm" (click)="confirmDeleteAccount()" [disabled]="deleting()">
+        {{ deleting() ? 'Deleting...' : 'Yes, delete my account' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+      <!-- ═══ NOTIFICATIONS (placeholder) ═══ -->
+      <section *ngIf="activeSection() === 'notifications'" class="settings-section">
+        <h2 class="settings-section-title">Notifications</h2>
+        <p class="settings-section-sub">Choose what you get notified about.</p>
+        <div class="settings-placeholder"><p>Coming soon.</p></div>
+      </section>
+
+      <!-- ═══ WORKSPACE MANAGEMENT (placeholder) ═══ -->
+      <section *ngIf="activeSection() === 'workspaces'" class="settings-section">
+        <h2 class="settings-section-title">Workspace management</h2>
+        <p class="settings-section-sub">Manage members and roles across your workspaces.</p>
+        <div class="settings-placeholder"><p>Coming soon.</p></div>
+      </section>
+
+      <!-- ═══ BOARD MANAGEMENT (placeholder) ═══ -->
+      <section *ngIf="activeSection() === 'boards'" class="settings-section">
+        <h2 class="settings-section-title">Board management</h2>
+        <p class="settings-section-sub">Manage labels and members for your boards.</p>
+        <div class="settings-placeholder"><p>Coming soon.</p></div>
+      </section>
+
+      <!-- ═══ TERMS OF SERVICE ═══ -->
+      <section *ngIf="activeSection() === 'terms'" class="settings-section">
+        <h2 class="settings-section-title">Terms of Service</h2>
+        <p class="settings-section-sub legal-updated">Last updated: July 2026</p>
+
+        <div class="legal-body">
+          <h3>1. Acceptance of Terms</h3>
+          <p>By creating an account or using SyncBoard, you agree to these Terms of Service. If you're using SyncBoard on behalf of an organization, you're agreeing on its behalf and confirming you have the authority to do so.</p>
+
+          <h3>2. Description of Service</h3>
+          <p>SyncBoard is a collaborative workspace that lets teams organize work using boards, lists, and cards, with real-time synchronization across all connected users.</p>
+
+          <h3>3. Account Registration & Responsibilities</h3>
+          <p>You're responsible for keeping your login credentials confidential and for all activity that happens under your account. Notify us immediately if you suspect unauthorized access.</p>
+
+          <h3>4. Acceptable Use</h3>
+          <p>You agree not to use SyncBoard to:</p>
+          <ul>
+            <li>Upload unlawful, harassing, or infringing content</li>
+            <li>Attempt to gain unauthorized access to other accounts or our systems</li>
+            <li>Reverse engineer or resell the service without written permission</li>
+            <li>Disrupt or overload our infrastructure</li>
+          </ul>
+
+          <h3>5. Subscription & Billing</h3>
+          <p>SyncBoard offers a free forever plan and paid team plans. Paid subscriptions renew automatically until cancelled. You can cancel anytime from account settings; you'll retain access until the end of the current billing period.</p>
+
+          <h3>6. Intellectual Property</h3>
+          <p>You retain ownership of everything you create on SyncBoard. We claim no rights to your boards or content beyond what's needed to operate and display it back to you and your collaborators.</p>
+
+          <h3>7. Termination</h3>
+          <p>You may delete your account at any time. We may suspend or terminate accounts that violate these terms, with notice where reasonably possible.</p>
+
+          <h3>8. Disclaimers & Limitation of Liability</h3>
+          <p>SyncBoard is provided "as is." We work hard to keep it reliable, but we don't guarantee uninterrupted or error-free service. To the extent permitted by law, our liability is limited to the amount you've paid us in the past 12 months.</p>
+
+          <h3>9. Governing Law</h3>
+          <p>These terms are governed by the laws of the jurisdiction in which SyncBoard is incorporated, without regard to conflict-of-law principles.</p>
+
+          <h3>10. Changes to These Terms</h3>
+          <p>We'll notify account holders of material changes by email at least 14 days before they take effect.</p>
+
+          <h3>11. Contact</h3>
+          <p>Questions? Email <a href="mailto:legal@syncboard.app">legal&#64;syncboard.app</a>.</p>
+        </div>
+      </section>
+
+      <!-- ═══ PRIVACY POLICY ═══ -->
+      <section *ngIf="activeSection() === 'privacy'" class="settings-section">
+        <h2 class="settings-section-title">Privacy Policy</h2>
+        <p class="settings-section-sub legal-updated">Last updated: July 2026</p>
+
+        <div class="legal-body">
+          <h3>1. Overview</h3>
+          <p>SyncBoard ("we", "us", "our") builds a collaborative workspace for teams. This policy explains what information we collect when you use SyncBoard, why we collect it, and the choices you have. We collect only what we need to run the product and keep it in sync — nothing more.</p>
+
+          <h3>2. Information We Collect</h3>
+          <p><strong>Account information:</strong> name, email address, and password (stored as a salted hash, never in plain text) when you register.</p>
+          <p><strong>Workspace content:</strong> boards, lists, cards, comments, and attachments you or your teammates create.</p>
+          <p><strong>Usage data:</strong> device type, browser, pages visited, and actions taken, collected automatically to help us fix bugs and improve performance.</p>
+          <p><strong>Cookies:</strong> used to keep you signed in and remember basic preferences. We don't use third-party advertising cookies.</p>
+
+          <h3>3. How We Use Your Information</h3>
+          <ul>
+            <li>To operate, maintain, and sync your boards in real time</li>
+            <li>To authenticate you and keep your account secure</li>
+            <li>To respond to support requests submitted through this site</li>
+            <li>To send essential service emails (password resets, security alerts)</li>
+            <li>To understand aggregate usage patterns and improve the product</li>
+          </ul>
+          <p>We do not sell your personal data, and we do not use your workspace content to train any third-party models.</p>
+
+          <h3>4. Data Sharing</h3>
+          <p>We share data only with infrastructure providers who help us run SyncBoard — cloud hosting, database, and transactional email providers — each bound by a data processing agreement. We disclose information to authorities only when legally required to do so.</p>
+
+          <h3>5. Data Retention</h3>
+          <p>We retain your account and workspace data for as long as your account is active. If you delete your account, we permanently remove your personal data within 30 days, except where retention is required for legal or security purposes.</p>
+
+          <h3>6. Your Rights</h3>
+          <p>Depending on your location, you may have the right to access, correct, export, or delete your personal data. To exercise any of these rights, contact us using the Support tab and select "Privacy Request" as the topic.</p>
+
+          <h3>7. Security Measures</h3>
+          <p>We encrypt data in transit and at rest and apply strict access controls internally. See the Security tab for details.</p>
+
+          <h3>8. Children's Privacy</h3>
+          <p>SyncBoard is not directed at children under 16, and we do not knowingly collect personal data from them.</p>
+
+          <h3>9. Changes to This Policy</h3>
+          <p>If we make material changes, we'll notify account holders by email before the changes take effect.</p>
+
+          <h3>10. Contact Us</h3>
+          <p>Questions about this policy? Reach us through the Support tab, or email <a href="mailto:privacy@syncboard.app">privacy&#64;syncboard.app</a>.</p>
+        </div>
+      </section>
+
+      <!-- ═══ SECURITY (trust/policy content, replaces old placeholder) ═══ -->
+      <section *ngIf="activeSection() === 'security'" class="settings-section">
+        <h2 class="settings-section-title">Security</h2>
+        <p class="settings-section-sub legal-updated">Last updated: July 2026</p>
+
+        <div class="legal-body">
+          <h3>Our Approach</h3>
+          <p>Security isn't a checkbox for us — it's what makes real-time sync trustworthy in the first place. Here's what protects your data, described plainly rather than in vague marketing language.</p>
+
+          <h3>Encryption</h3>
+          <p>All traffic between your browser and SyncBoard is encrypted in transit via TLS 1.2+. Data at rest, including board content and attachments, is encrypted using industry-standard encryption at the database and storage layer.</p>
+
+          <h3>Infrastructure & Hosting</h3>
+          <p>SyncBoard runs on reputable cloud infrastructure with physical and network security managed by our hosting provider. We isolate environments between development, staging, and production.</p>
+
+          <h3>Access Controls</h3>
+          <p>Internal access to production systems and customer data is limited to engineers who need it, protected by multi-factor authentication, and logged. Passwords are never stored in plain text — we use salted, industry-standard hashing.</p>
+
+          <h3>Application Security</h3>
+          <p>We run automated dependency and vulnerability scanning on every release, and code changes go through peer review before deployment.</p>
+
+          <h3>Incident Response</h3>
+          <p>If we ever detect a security incident affecting your data, we'll notify affected account holders as soon as we can confirm the scope, along with what we're doing about it.</p>
+
+          <h3>Responsible Disclosure</h3>
+          <p>Found a security issue? We want to know. Email <a href="mailto:security@syncboard.app">security&#64;syncboard.app</a> with details, and we'll respond within 2 business days. Please don't publicly disclose a vulnerability before we've had a chance to address it.</p>
+
+          <h3>Compliance</h3>
+          <p>SyncBoard is a growing product and we're honest about where we are: we follow security best practices day to day, and we're working toward formal certifications like SOC 2 as the company scales. We'll update this page as that progresses.</p>
+
+          <h3>Questions</h3>
+          <p>Reach the security team any time at <a href="mailto:security@syncboard.app">security&#64;syncboard.app</a>.</p>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Delete account confirmation modal -->
+    <div class="modal-overlay" *ngIf="showDeleteConfirm()" (click)="closeDeleteConfirm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+        <h2>Delete account</h2>
+        <button class="btn-close" (click)="closeDeleteConfirm()">×</button>
+        </div>
+        <div class="modal-body">
+        <p>This will permanently delete your account and remove your access to all workspaces. This cannot be undone.</p>
+        <div class="error-message" *ngIf="deleteError()">{{ deleteError() }}</div>
+        </div>
+        <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeDeleteConfirm()" [disabled]="deleting()">Cancel</button>
+        <button class="btn-delete-confirm" (click)="confirmDeleteAccount()" [disabled]="deleting()">
+            {{ deleting() ? 'Deleting...' : 'Yes, delete my account' }}
+        </button>
+        </div>
+    </div>
+    </div>
+  </div>
+</div>

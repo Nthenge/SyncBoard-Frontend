@@ -26,6 +26,12 @@ export class LandingComponent implements OnInit {
   privacyAgreed = signal(false);
 
   issues = signal<Issue[]>([]);
+  registerPrefillEmail = signal('');
+
+  onSwitchToRegister(email: string): void {
+    this.registerPrefillEmail.set(email || '');
+    this.authModal.set('register');
+  }
 
   talkForm = {
     fullName: '',

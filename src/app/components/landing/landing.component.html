@@ -318,11 +318,11 @@
   <div class="auth-overlay" (click)="authModal.set(null)">
     <div class="auth-modal-panel" (click)="$event.stopPropagation()">
       @if (authModal() === 'login') {
-        <app-login [isModal]="true" (closeModal)="authModal.set(null)" (switchToRegister)="authModal.set('register')" (switchToForgot)="authModal.set('forgot')"></app-login>
-      } @else if (authModal() === 'register') {
-        <app-register [isModal]="true" (closeModal)="authModal.set(null)" (switchToLogin)="authModal.set('login')"></app-register>
-      } @else {
-        <app-forgot-password [isModal]="true" (closeModal)="authModal.set(null)" (switchToLogin)="authModal.set('login')"></app-forgot-password>
+      <app-login [isModal]="true" (closeModal)="authModal.set(null)" (switchToRegister)="onSwitchToRegister($event)" (switchToForgot)="authModal.set('forgot')"></app-login>
+    } @else if (authModal() === 'register') {
+      <app-register [isModal]="true" [prefillEmail]="registerPrefillEmail()" (closeModal)="authModal.set(null)" (switchToLogin)="authModal.set('login')"></app-register>
+    } @else {
+            <app-forgot-password [isModal]="true" (closeModal)="authModal.set(null)" (switchToLogin)="authModal.set('login')"></app-forgot-password>
       }
     </div>
   </div>

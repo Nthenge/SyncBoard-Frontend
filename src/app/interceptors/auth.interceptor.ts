@@ -17,14 +17,14 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   }
 
   return next(authReq).pipe(
-    catchError((error: HttpErrorResponse) => {
-      if ((error.status === 401 || error.status === 403) && !isAuthEndpoint(req.url)) {
-        return handle401Error(req, next, authService);
-      }
+  catchError((error: HttpErrorResponse) => {
+    if (error.status === 401 && !isAuthEndpoint(req.url)) {
+      return handle401Error(req, next, authService);
+    }
 
-      return throwError(() => error);
-    })
-  );
+    return throwError(() => error);
+  })
+);
 };
 
 function addTokenHeader(request: HttpRequest<unknown>, token: string): HttpRequest<unknown> {

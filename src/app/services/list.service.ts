@@ -40,8 +40,8 @@ getLists(boardId: string): Observable<BoardList[]> {
       const raw = response?.data ?? response ?? [];
       return (Array.isArray(raw) ? raw : []).map((l: any) => ({
         id: l.id,
-        name: l.title,
-        order: l.position,
+        name: l.title,       
+        order: l.position,  
         boardId: l.boardId,
         cards: []
       } as BoardList));
@@ -63,7 +63,6 @@ getLists(boardId: string): Observable<BoardList[]> {
         cards: []
       };
 
-      // Update the lists
       const updatedLists = [...currentLists, newList];
       this.listsSubject.next(updatedLists);
 
@@ -76,12 +75,19 @@ getLists(boardId: string): Observable<BoardList[]> {
       boardId: request.boardId,
     };
 
-    return this.http.post<BoardList>(
+    return this.http.post<any>(
       `${environment.apiUrl}${environment.api.basePath}/boards/lists`,
       body
     ).pipe(
-      // Keep UI in sync even in non-mock mode
-      map(created => {
+      map(response => {
+        const raw = response?.data ?? response;
+        const created: BoardList = {
+          id: raw.id,
+          name: raw.title,
+          order: raw.position,
+          boardId: raw.boardId,
+          cards: []
+        };
         const current = this.listsSubject.value;
         this.listsSubject.next([...current, created]);
         return created;
