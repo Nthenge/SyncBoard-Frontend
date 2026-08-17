@@ -19,6 +19,7 @@ export interface AuthResponse {
     token: string;
     firstName: string;
     sirName?: string;
+    avatarUrl?: string;  
     refreshToken: string; // <-- Added to match backend login payload
     role?: string;        // <-- Added to match backend login payload
   };

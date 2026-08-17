@@ -337,3 +337,54 @@ export interface TalkResponse {
   success: boolean;
   message?: string;
 }
+
+export interface CommentMentionSummary {
+  userId: string | number;
+  userFullName: string;
+}
+
+export interface Comment {
+  id: string | number;
+  cardId: string | number;
+  authorId: string | number;
+  authorName: string;
+  content: string;
+  createdAt: string;
+  mentions: CommentMentionSummary[];
+}
+
+export interface CreateCommentRequest {
+  content: string;
+  mentionedUserIds: (string | number)[];
+}
+
+export interface AppNotification {
+  id: number;
+  type: 'CARD_ASSIGNED' | 'ADDED_TO_BOARD' | 'MENTIONED' | 'DUE_SOON';
+  message: string;
+  referenceType?: 'CARD' | 'BOARD';
+  referenceId?: number;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationPreference {
+  emailOnAssign: boolean;
+  inAppOnAssign: boolean;
+  emailOnBoardAdd: boolean;
+  inAppOnBoardAdd: boolean;
+  emailOnMention: boolean;
+  inAppOnMention: boolean;
+  emailOnDueSoon: boolean;
+  inAppOnDueSoon: boolean;
+  weeklyDigest: boolean;
+}
+
+export interface SpringPage<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;      // current page index, 0-based
+  size: number;
+  last: boolean;
+}

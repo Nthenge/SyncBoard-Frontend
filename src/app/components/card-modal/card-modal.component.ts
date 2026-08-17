@@ -5,7 +5,8 @@ import { Card, Label } from '../../models/board.models';
 import { CardService } from '../../services/card.service';
 import { LabelService } from '../../services/label.service';
 import { BoardMemberService } from '../../services/board-member.service';
-import { BoardMemberSummary } from '../../models/board.models';
+import { BoardMemberSummary, Comment, CommentMentionSummary } from '../../models/board.models';
+import { CommentService } from '../../services/comment.service';
 
 interface CalendarDay {
   date: Date;
@@ -23,7 +24,8 @@ export class CardModalComponent implements OnInit {
   constructor(
     private cardService: CardService,
     private labelService: LabelService,
-    private boardMemberService: BoardMemberService
+    private boardMemberService: BoardMemberService,
+    private commentService: CommentService
   ) {}
 
   @Input() card: Card | null = null;
@@ -51,6 +53,12 @@ export class CardModalComponent implements OnInit {
   isUpdatingDueDate = signal(false);
   dueDateError = signal<string | null>(null);
   calendarViewDate = signal<Date>(new Date());
+  comments = signal<Comment[]>([]);
+  commentsLoading = signal(false);
+  newCommentText = '';
+  showMentionPicker = signal(false);
+  selectedMentions = signal<CommentMentionSummary[]>([]);
+  postingComment = signal(false);
 
   calendarWeeks = computed(() => this.buildCalendarWeeks(this.calendarViewDate()));
 
@@ -60,18 +68,83 @@ export class CardModalComponent implements OnInit {
       this.editDescription = this.card.description || '';
     }
 
+    if (this.card) {
+    this.loadComments();
+  }
+
     if (this.boardId != null) {
       this.labelService.getLabelsByBoard(this.boardId).subscribe({
-        next: (labels) => this.availableLabels.set(labels),
-        error: () => this.availableLabels.set([])
-      });
+      next: (labels: Label[]) => this.availableLabels.set(labels),
+      error: () => this.availableLabels.set([])
+    });
 
-      this.boardMemberService.getMembers(this.boardId).subscribe({
-        next: (members) => this.boardMembers.set(members),
-        error: () => this.boardMembers.set([])
-      });
+    this.boardMemberService.getMembers(this.boardId).subscribe({
+      next: (members: BoardMemberSummary[]) => this.boardMembers.set(members),
+      error: () => this.boardMembers.set([])
+    });
     }
   }
+
+  loadComments(): void {
+    if (!this.card) return;
+    this.commentsLoading.set(true);
+    this.commentService.getComments(this.card.id).subscribe({
+      next: (comments: Comment[]) => {
+        this.comments.set(comments);
+        this.commentsLoading.set(false);
+      },
+      error: () => {
+        this.comments.set([]);
+        this.commentsLoading.set(false);
+      }
+    });
+  }
+
+toggleMentionPicker(): void {
+  this.showMentionPicker.set(!this.showMentionPicker());
+}
+
+toggleMention(member: BoardMemberSummary): void {
+  const current = this.selectedMentions();
+  const exists = current.some(m => m.userId === member.userId);
+  this.selectedMentions.set(
+    exists
+      ? current.filter(m => m.userId !== member.userId)
+      : [...current, { userId: member.userId, userFullName: member.userFullName }]
+  );
+}
+
+isMentioned(member: BoardMemberSummary): boolean {
+  return this.selectedMentions().some(m => m.userId === member.userId);
+}
+
+postComment(): void {
+  if (!this.card || !this.newCommentText.trim()) return;
+  if (this.postingComment()) return;
+
+  this.postingComment.set(true);
+
+  this.commentService.createComment(this.card.id, {
+    content: this.newCommentText.trim(),
+    mentionedUserIds: this.selectedMentions().map(m => m.userId)
+  }).subscribe({
+    next: (comment: Comment) => {
+      this.comments.update(list => [...list, comment]);
+      this.newCommentText = '';
+      this.selectedMentions.set([]);
+      this.showMentionPicker.set(false);
+      this.postingComment.set(false);
+    },
+    error: () => this.postingComment.set(false)
+  });
+}
+
+deleteComment(comment: Comment): void {
+  if (!this.card) return;
+  this.commentService.deleteComment(this.card.id, comment.id).subscribe({
+    next: () => this.comments.update(list => list.filter(c => c.id !== comment.id))
+  });
+}
 
   onClose(): void {
     this.close.emit();
@@ -162,7 +235,7 @@ export class CardModalComponent implements OnInit {
     this.isReassigning.set(true);
 
     this.cardService.reassignCard(this.card.id, member.userId).subscribe({
-      next: (updatedCard) => {
+      next: (updatedCard: Card) => {
         if (!this.card) return;
         this.card.assigneeId = updatedCard.assigneeId;
         this.card.assigneeName = updatedCard.assigneeName;
@@ -241,7 +314,7 @@ export class CardModalComponent implements OnInit {
     const dueDateString = `${y}-${m}-${d}T00:00:00`;
 
     this.cardService.updateCard(String(this.card.id), { dueDate: dueDateString as any }).subscribe({
-      next: (updated) => {
+      next: (updated: Card) => {
         if (!this.card) return;
         this.card.dueDate = (updated as any)?.dueDate ?? day;
         this.isUpdatingDueDate.set(false);
@@ -263,7 +336,7 @@ export class CardModalComponent implements OnInit {
   this.dueDateError.set(null);
 
   this.cardService.updateCard(String(this.card.id), { dueDate: null }).subscribe({
-    next: (updated) => {
+    next: (updated: Card) => {
       if (!this.card) return;
       this.card.dueDate = (updated as any)?.dueDate ?? undefined;
       this.isUpdatingDueDate.set(false);

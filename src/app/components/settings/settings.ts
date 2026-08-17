@@ -6,6 +6,8 @@ import { AuthService } from '../../services/auth.service';
 import { FaqService } from '../../services/faq.service';
 import { TalkService } from '../../services/talk.service';
 import { FAQ, Issue } from '../../models/board.models';
+import { NotificationPreferenceService } from '../../services/notification-preference.service';
+import { NotificationPreference } from '../../models/board.models';
 
 type SettingsSection =
   | 'support' | 'faq' | 'account' | 'notifications'
@@ -23,6 +25,7 @@ export class SettingsComponent implements OnInit {
   private authService = inject(AuthService);
   private faqService = inject(FaqService);
   private talkService = inject(TalkService);
+  private notificationPreferenceService = inject(NotificationPreferenceService);
 
   activeSection = signal<SettingsSection>('support');
 
@@ -31,11 +34,13 @@ export class SettingsComponent implements OnInit {
     return user?.name || user?.email?.split('@')[0] || 'User';
   });
 
-  // Update loadAccountForm() - firstName/sirName/email already prepopulate correctly,
-// no change needed there. Just remove avatarUrl from manual text entry flow below.
-
-avatarUploading = signal(false);
-avatarError = signal('');
+  avatarUploading = signal(false);
+  avatarError = signal('');
+  notifPrefs = signal<NotificationPreference | null>(null);
+  notifPrefsLoading = signal(false);
+  notifPrefsSaving = signal(false);
+  notifPrefsSaved = signal(false);
+  notifPrefsError = signal('');
 
 onAvatarFileSelected(event: Event): void {
   const input = event.target as HTMLInputElement;
@@ -49,9 +54,6 @@ onAvatarFileSelected(event: Event): void {
 
   this.avatarUploading.set(true);
   this.avatarError.set('');
-
-  // TODO: point this at the real backend upload endpoint once you share it.
-  // Expected: returns { url: string } (or similar) after processing.
   this.authService.uploadAvatar(file).then((url: string) => {
     this.accountForm.avatarUrl = url;
     this.avatarUploading.set(false);
@@ -62,23 +64,66 @@ onAvatarFileSelected(event: Event): void {
 }
 
   userEmail = computed(() => this.authService.user()?.email ?? '');
-  // ─── Account tab ────────────────────────────────────────────────────────
-accountForm = {
-  firstName: '',
-  sirName: '',
-  email: '',
-  avatarUrl: '',
-  newPassword: '',
-  confirmPassword: ''
-};
+    accountForm = {
+    firstName: '',
+    sirName: '',
+    email: '',
+    avatarUrl: '',
+    newPassword: '',
+    confirmPassword: ''
+  };
 
-accountSaving = signal(false);
-accountError = signal('');
-accountSuccess = signal('');
+  accountSaving = signal(false);
+  accountError = signal('');
+  accountSuccess = signal('');
 
-showDeleteConfirm = signal(false);
-deleting = signal(false);
-deleteError = signal('');
+  showDeleteConfirm = signal(false);
+  deleting = signal(false);
+  deleteError = signal('');
+
+  loadNotifPrefs(): void {
+    this.notifPrefsLoading.set(true);
+    this.notifPrefsError.set('');
+    this.notificationPreferenceService.getPreferences().subscribe({
+      next: (prefs) => {
+        this.notifPrefs.set(prefs);
+        this.notifPrefsLoading.set(false);
+      },
+      error: () => {
+        this.notifPrefsLoading.set(false);
+        this.notifPrefsError.set('Failed to load notification preferences.');
+      }
+    });
+  }
+
+  toggleNotifPref(key: keyof NotificationPreference): void {
+    const current = this.notifPrefs();
+    if (!current) return;
+    this.notifPrefs.set({ ...current, [key]: !current[key] });
+    this.notifPrefsSaved.set(false);
+  }
+
+  saveNotifPrefs(): void {
+    const prefs = this.notifPrefs();
+    if (!prefs) return;
+
+    this.notifPrefsSaving.set(true);
+    this.notifPrefsError.set('');
+    this.notifPrefsSaved.set(false);
+
+    this.notificationPreferenceService.updatePreferences(prefs).subscribe({
+      next: (updated) => {
+        this.notifPrefs.set(updated);
+        this.notifPrefsSaving.set(false);
+        this.notifPrefsSaved.set(true);
+        setTimeout(() => this.notifPrefsSaved.set(false), 3000);
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.notifPrefsSaving.set(false);
+        this.notifPrefsError.set(err?.error?.message || 'Failed to save. Please try again.');
+      }
+    });
+  }
 
 openDeleteConfirm(): void {
   this.deleteError.set('');
@@ -102,16 +147,16 @@ confirmDeleteAccount(): void {
   });
 }
 
-loadAccountForm(): void {
-  const user = this.authService.user();
-  if (!user) return;
-  this.accountForm.firstName = user.firstName || '';
-  this.accountForm.sirName = user.sirName || '';
-  this.accountForm.email = user.email || '';
-  this.accountForm.avatarUrl = (user as any).avatarUrl || '';
-  this.accountForm.newPassword = '';
-  this.accountForm.confirmPassword = '';
-}
+  loadAccountForm(): void {
+    const user = this.authService.user();
+    if (!user) return;
+    this.accountForm.firstName = user.firstName || '';
+    this.accountForm.sirName = user.sirName || '';
+    this.accountForm.email = user.email || '';
+    this.accountForm.avatarUrl = (user as any).avatarUrl || '';
+    this.accountForm.newPassword = '';
+    this.accountForm.confirmPassword = '';
+  }
 
 saveAccount(): void {
   this.accountError.set('');
@@ -142,13 +187,9 @@ saveAccount(): void {
   });
 }
 
-  // ─── FAQ ────────────────────────────────────────────────────────────────────
-
   faqs = signal<FAQ[]>([]);
   faqsLoading = signal(false);
   expandedFaqId = signal<number | null>(null);
-
-  // ─── Support: Contact / issue form ──────────────────────────────────────────
 
   issues = signal<Issue[]>([]);
 
@@ -175,13 +216,14 @@ saveAccount(): void {
   }
 
   selectSection(section: SettingsSection): void {
-  this.activeSection.set(section);
-  if (section === 'account') {
-    this.loadAccountForm();
+    this.activeSection.set(section);
+    if (section === 'account') {
+      this.loadAccountForm();
+    }
+    if (section === 'notifications') {
+      this.loadNotifPrefs();
+    }
   }
-}
-
-  // ─── FAQ ────────────────────────────────────────────────────────────────────
 
   loadFaqs(): void {
     this.faqsLoading.set(true);
@@ -200,8 +242,6 @@ saveAccount(): void {
   toggleFaq(faq: FAQ): void {
     this.expandedFaqId.set(this.expandedFaqId() === faq.id ? null : faq.id);
   }
-
-  // ─── Issue / contact form ───────────────────────────────────────────────────
 
   loadIssues(): void {
     this.talkService.getActiveIssues().subscribe({

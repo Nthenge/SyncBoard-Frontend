@@ -296,17 +296,29 @@ async uploadAvatar(file: File): Promise<string> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await firstValueFrom(
-        this.http.post<{ data: { url: string } }>(
-            `${environment.apiUrl}${environment.api?.basePath ?? ''}/user/avatar`,
-            formData,
-            { headers: { Authorization: `Bearer ${token}` } }
-        )
-    );
+    try {
+        const response = await firstValueFrom(
+            this.http.post<{ data: { url: string } }>(
+                `${environment.apiUrl}${environment.api?.basePath ?? ''}/user/avatar`,
+                formData,
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+        );
 
-    const url = response?.data?.url;
-    if (!url) throw new Error('Upload succeeded but no URL was returned.');
-    return url;
+        const url = response?.data?.url;
+        if (!url) throw new Error('Upload succeeded but no URL was returned.');
+        return url;
+    } catch (error: any) {
+        const backendMessage = error?.error?.message;
+        throw new Error(backendMessage || 'Failed to upload image. Please try again.');
+    }
+}
+
+async fetchAvatarAsBlobUrl(url: string): Promise<string> {
+    const blob = await firstValueFrom(
+        this.http.get(url, { responseType: 'blob' })
+    );
+    return URL.createObjectURL(blob);
 }
 
     async resetPassword(token: string, newPassword: string): Promise<void> {

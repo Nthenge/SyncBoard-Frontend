@@ -15,7 +15,10 @@
           [class.account-trigger--open]="accountMenuOpen()"
           (click)="toggleAccountMenu()"
         >
-          <span class="account-avatar">{{ getInitial(userName()) }}</span>
+          <span class="account-avatar">
+            <img *ngIf="userAvatarUrl()" [src]="userAvatarUrl()" alt="">
+            <ng-container *ngIf="!userAvatarUrl()">{{ getInitial(userName()) }}</ng-container>
+          </span>
           <span class="account-name">{{ userName() }}</span>
           <span class="account-chevron">⌄</span>
         </button>
@@ -24,7 +27,10 @@
 
         <div class="account-menu" *ngIf="accountMenuOpen()" (click)="$event.stopPropagation()">
           <div class="account-menu-header">
-            <span class="account-menu-avatar">{{ getInitial(userName()) }}</span>
+            <span class="account-avatar">
+              <img *ngIf="userAvatarUrl()" [src]="userAvatarUrl()" alt="">
+              <ng-container *ngIf="!userAvatarUrl()">{{ getInitial(userName()) }}</ng-container>
+            </span>
             <div class="account-menu-id">
               <strong>{{ userName() }}</strong>
               <span *ngIf="userEmail()">{{ userEmail() }}</span>

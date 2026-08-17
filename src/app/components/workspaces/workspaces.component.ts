@@ -16,6 +16,8 @@ import { BoardMemberService } from '../../services/board-member.service';
 import { BoardMemberSummary } from '../../models/board.models';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { NotificationService } from '../../services/notification.service';
+import { AppNotification } from '../../models/board.models';
 
 type ModalStep = 'create' | 'invite';
 
@@ -48,6 +50,7 @@ export class WorkspacesComponent implements OnInit {
   private listService = inject(ListService);
   private cardService = inject(CardService);
   private boardMemberService = inject(BoardMemberService);
+  private notificationService = inject(NotificationService);
 
   workspaceBoards = signal<Board[]>([]);
   boardsLoading = signal(false);
@@ -85,6 +88,13 @@ export class WorkspacesComponent implements OnInit {
   editWorkspaceDescription = '';
   editWorkspaceError = signal('');
   savingWorkspaceEdit = signal(false);
+  showNotifDropdown = signal(false);
+  notifications = signal<AppNotification[]>([]);
+  notifLoading = signal(false);
+  notifLoadingMore = signal(false);
+  notifPage = signal(0);
+  notifTotalPages = signal(0);
+  unreadCount = signal(0);
 
   private scratchpadChange$ = new Subject<string>();
 
@@ -145,6 +155,85 @@ export class WorkspacesComponent implements OnInit {
       error: () => this.boardsLoading.set(false)
     });
   }
+
+    toggleNotifDropdown(event: Event): void {
+      event.stopPropagation();
+      const opening = !this.showNotifDropdown();
+      this.showNotifDropdown.set(opening);
+      if (opening) {
+        this.loadNotifications(true);
+      }
+    }
+
+    closeNotifDropdown(): void {
+      this.showNotifDropdown.set(false);
+    }
+
+    loadUnreadCount(): void {
+      this.notificationService.getUnreadCount().subscribe({
+        next: (count) => this.unreadCount.set(count),
+        error: () => {}
+      });
+    }
+
+    loadNotifications(reset: boolean): void {
+      const page = reset ? 0 : this.notifPage();
+
+      if (reset) {
+        this.notifLoading.set(true);
+      } else {
+        this.notifLoadingMore.set(true);
+      }
+
+      this.notificationService.getNotifications(page, 10).subscribe({
+        next: (result) => {
+          this.notifications.set(reset ? result.content : [...this.notifications(), ...result.content]);
+          this.notifPage.set(result.number);
+          this.notifTotalPages.set(result.totalPages);
+          this.notifLoading.set(false);
+          this.notifLoadingMore.set(false);
+        },
+        error: () => {
+          this.notifLoading.set(false);
+          this.notifLoadingMore.set(false);
+        }
+      });
+    }
+
+    loadMoreNotifications(): void {
+      if (this.notifPage() + 1 >= this.notifTotalPages()) return;
+      this.notifPage.set(this.notifPage() + 1);
+      this.loadNotifications(false);
+    }
+
+    hasMoreNotifications(): boolean {
+      return this.notifPage() + 1 < this.notifTotalPages();
+    }
+
+    markNotificationRead(notification: AppNotification): void {
+      if (notification.read) return;
+
+      this.notifications.update(list =>
+        list.map(n => n.id === notification.id ? { ...n, read: true } : n)
+      );
+      this.unreadCount.update(count => Math.max(0, count - 1));
+
+      this.notificationService.markRead(notification.id).subscribe({ error: () => {} });
+    }
+
+    markAllNotificationsRead(): void {
+      if (this.unreadCount() === 0) return;
+
+      this.notifications.update(list => list.map(n => ({ ...n, read: true })));
+      this.unreadCount.set(0);
+
+      this.notificationService.markAllRead().subscribe({ error: () => {} });
+    }
+
+    getNotifTimeLabel(notification: AppNotification): string {
+      const date = new Date(notification.createdAt);
+      return isNaN(date.getTime()) ? '' : this.timeAgo(date);
+    }
 
   myAssignedTasks = computed(() => {
     const uid = this.currentUserId();
@@ -242,6 +331,7 @@ export class WorkspacesComponent implements OnInit {
   this.loadRecentBoards();
   this.loadStarredBoards();
   this.loadStarredWorkspaces();
+  this.loadUnreadCount();
 
   this.scratchpadChange$.pipe(
     debounceTime(1500),
@@ -553,6 +643,8 @@ getMemberRole(member: any): string {
   getMemberInitial(member: any): string {
     return this.getMemberLabel(member).charAt(0).toUpperCase();
   }
+
+  userAvatarUrl = computed(() => this.authService.user()?.avatarUrl ?? null);
 
   selectedWorkspace = computed(() =>
     this.workspaces().find(ws => ws.id === this.activeWorkspaceId()) ?? null

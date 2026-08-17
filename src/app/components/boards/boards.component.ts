@@ -99,6 +99,59 @@ cardPriorities: CardPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
   reassigningCardId = signal<string | number | null>(null);
   isReassigningInPanel = signal(false);
 
+  workspaceMembers = signal<{ id: number; firstName: string; sirName: string; email: string; avatarUrl?: string }[]>([]);
+
+showAddMemberPicker = signal(false);
+addingMemberId = signal<string | number | null>(null);
+addMemberError = signal<string | null>(null);
+
+addableMembers = computed(() => {
+  const boardMemberIds = new Set(this.panelMembers().map(m => String(m.userId)));
+  return this.workspaceMembers().filter(wm => !boardMemberIds.has(String(wm.id)));
+});
+
+getWsMemberLabel(m: { firstName?: string; sirName?: string; email: string }): string {
+  const name = [m.firstName, m.sirName].filter(Boolean).join(' ').trim();
+  return name || m.email;
+}
+
+toggleAddMemberPicker(event: Event): void {
+  event.stopPropagation();
+  this.showAddMemberPicker.set(!this.showAddMemberPicker());
+  this.addMemberError.set(null);
+}
+
+private loadWorkspaceMembers(): void {
+  const wsId = this.workspaceId();
+  if (!wsId) return;
+  this.workspaceService.getWorkspace(wsId).subscribe({
+    next: (ws: any) => this.workspaceMembers.set(ws?.members ?? []),
+    error: (err) => {
+      this.workspaceMembers.set([]);
+      console.error('Failed to load workspace members for add-to-board picker:', err);
+    }
+  });
+}
+
+  addMemberToBoard(candidate: { id: number }): void {
+    const boardId = this.selectedBoardId();
+    if (!boardId || this.addingMemberId() != null) return;
+
+    this.addingMemberId.set(candidate.id);
+    this.addMemberError.set(null);
+
+    this.boardMemberService.addMembers(boardId, [candidate.id]).subscribe({
+      next: () => {
+        this.addingMemberId.set(null);
+        this.loadPanelMembers(boardId); // refresh so the new member shows up immediately
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.addingMemberId.set(null);
+        this.addMemberError.set(err?.error?.message || 'Failed to add member — only board admins can add members.');
+      }
+    });
+  }
+
   toggleMembersDropdown(event: Event): void {
   event.stopPropagation();
   this.showMembersDropdown.set(!this.showMembersDropdown());
@@ -111,6 +164,9 @@ cardPriorities: CardPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
   selectedBoard = computed(() =>
     this.boards().find(b => b.id === this.selectedBoardId()) ?? null
   );
+
+  
+  userAvatarUrl = computed(() => this.authService.user()?.avatarUrl ?? null);
 
   sortedBoardLists = computed(() =>
     [...this.boardLists()].sort((a, b) => (b.cards?.length || 0) - (a.cards?.length || 0))
@@ -127,6 +183,7 @@ cardPriorities: CardPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
     const wsId = this.route.snapshot.paramMap.get('workspaceId') || '';
     this.workspaceId.set(wsId);
     this.loadBoards();
+    this.loadWorkspaceMembers();
   }
 
   loadBoards(): void {

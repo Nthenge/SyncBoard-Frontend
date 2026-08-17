@@ -141,6 +141,60 @@
       </div>
     </div>
 
+    <div class="section comments-section">
+      <label>Comments</label>
+
+      <div class="comments-loading" *ngIf="commentsLoading()">
+        <div class="calendar-nav-btn" style="cursor:default;">…</div>
+      </div>
+
+      <div class="comments-list" *ngIf="!commentsLoading() && comments().length">
+        <div class="comment-item" *ngFor="let comment of comments()">
+          <div class="comment-header">
+            <span class="comment-author">{{ comment.authorName }}</span>
+            <span class="comment-date">{{ comment.createdAt | date:'short' }}</span>
+            <button class="comment-delete-btn" *ngIf="comment.authorId === card?.assigneeId" (click)="deleteComment(comment)">✕</button>
+          </div>
+          <p class="comment-content">{{ comment.content }}</p>
+          <div class="comment-mentions" *ngIf="comment.mentions.length">
+            <span class="mention-chip" *ngFor="let m of comment.mentions">@{{ m.userFullName }}</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="placeholder" *ngIf="!commentsLoading() && comments().length === 0">No comments yet.</p>
+
+      <div class="comment-composer">
+        <textarea
+          class="description-input"
+          rows="2"
+          placeholder="Write a comment..."
+          [(ngModel)]="newCommentText"
+        ></textarea>
+
+        <div class="comment-composer-row">
+          <button type="button" class="btn-add-label" (click)="toggleMentionPicker()">
+            @ Mention {{ selectedMentions().length ? '(' + selectedMentions().length + ')' : '' }}
+          </button>
+          <button type="button" class="btn-save" style="flex:0; padding: 0.5rem 1.1rem;" [disabled]="!newCommentText.trim() || postingComment()" (click)="postComment()">
+            {{ postingComment() ? 'Posting...' : 'Post' }}
+          </button>
+        </div>
+
+        <div class="mention-picker" *ngIf="showMentionPicker()">
+          <button
+            *ngFor="let member of boardMembers()"
+            class="assignee-option"
+            [class.selected]="isMentioned(member)"
+            (click)="toggleMention(member)"
+          >
+            {{ member.userFullName }}
+          </button>
+          <p class="placeholder" *ngIf="boardMembers().length === 0">No board members found.</p>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-save" (click)="onSave()">Save Changes</button>
       <button class="btn-delete" (click)="onDelete()">Delete Card</button>

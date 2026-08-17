@@ -215,13 +215,135 @@
     </div>
   </div>
 </div>
+      <!-- ═══ NOTIFICATIONS ═══ -->
+    <section *ngIf="activeSection() === 'notifications'" class="settings-section">
+      <h2 class="settings-section-title">Notifications</h2>
+      <p class="settings-section-sub">Choose what you get notified about.</p>
 
-      <!-- ═══ NOTIFICATIONS (placeholder) ═══ -->
-      <section *ngIf="activeSection() === 'notifications'" class="settings-section">
-        <h2 class="settings-section-title">Notifications</h2>
-        <p class="settings-section-sub">Choose what you get notified about.</p>
-        <div class="settings-placeholder"><p>Coming soon.</p></div>
-      </section>
+      <div class="notif-loading" *ngIf="notifPrefsLoading()">
+        <div class="spinner spinner--sm"></div>
+      </div>
+
+      <div class="notif-cards" *ngIf="!notifPrefsLoading() && notifPrefs() as prefs">
+
+        <div class="notif-card">
+          <div class="notif-card-header">
+            <span class="notif-card-icon">👤</span>
+            <span class="notif-card-title">Card assigned to you</span>
+          </div>
+          <div class="notif-card-rows">
+            <div class="notif-toggle-row">
+              <span class="notif-toggle-label">In-app</span>
+              <button type="button" class="toggle-switch" [class.toggle-switch--on]="prefs.inAppOnAssign"
+                      (click)="toggleNotifPref('inAppOnAssign')" [attr.aria-label]="'Toggle in-app notifications for card assignments'">
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
+            <div class="notif-toggle-row">
+              <span class="notif-toggle-label">Email</span>
+              <button type="button" class="toggle-switch" [class.toggle-switch--on]="prefs.emailOnAssign"
+                      (click)="toggleNotifPref('emailOnAssign')" [attr.aria-label]="'Toggle email notifications for card assignments'">
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif-card">
+          <div class="notif-card-header">
+            <span class="notif-card-icon">🗂️</span>
+            <span class="notif-card-title">Added to a board</span>
+          </div>
+          <div class="notif-card-rows">
+            <div class="notif-toggle-row">
+              <span class="notif-toggle-label">In-app</span>
+              <button type="button" class="toggle-switch" [class.toggle-switch--on]="prefs.inAppOnBoardAdd"
+                      (click)="toggleNotifPref('inAppOnBoardAdd')" [attr.aria-label]="'Toggle in-app notifications for board additions'">
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
+            <div class="notif-toggle-row">
+              <span class="notif-toggle-label">Email</span>
+              <button type="button" class="toggle-switch" [class.toggle-switch--on]="prefs.emailOnBoardAdd"
+                      (click)="toggleNotifPref('emailOnBoardAdd')" [attr.aria-label]="'Toggle email notifications for board additions'">
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif-card">
+          <div class="notif-card-header">
+            <span class="notif-card-icon">💬</span>
+            <span class="notif-card-title">Mentioned in a comment</span>
+          </div>
+          <div class="notif-card-rows">
+            <div class="notif-toggle-row">
+              <span class="notif-toggle-label">In-app</span>
+              <button type="button" class="toggle-switch" [class.toggle-switch--on]="prefs.inAppOnMention"
+                      (click)="toggleNotifPref('inAppOnMention')" [attr.aria-label]="'Toggle in-app notifications for mentions'">
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
+            <div class="notif-toggle-row">
+              <span class="notif-toggle-label">Email</span>
+              <button type="button" class="toggle-switch" [class.toggle-switch--on]="prefs.emailOnMention"
+                      (click)="toggleNotifPref('emailOnMention')" [attr.aria-label]="'Toggle email notifications for mentions'">
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif-card">
+          <div class="notif-card-header">
+            <span class="notif-card-icon">⏳</span>
+            <span class="notif-card-title">Due date reminders</span>
+          </div>
+          <div class="notif-card-rows">
+            <div class="notif-toggle-row">
+              <span class="notif-toggle-label">In-app</span>
+              <button type="button" class="toggle-switch" [class.toggle-switch--on]="prefs.inAppOnDueSoon"
+                      (click)="toggleNotifPref('inAppOnDueSoon')" [attr.aria-label]="'Toggle in-app notifications for due date reminders'">
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
+            <div class="notif-toggle-row">
+              <span class="notif-toggle-label">Email</span>
+              <button type="button" class="toggle-switch" [class.toggle-switch--on]="prefs.emailOnDueSoon"
+                      (click)="toggleNotifPref('emailOnDueSoon')" [attr.aria-label]="'Toggle email notifications for due date reminders'">
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif-card">
+          <div class="notif-card-header">
+            <span class="notif-card-icon">📰</span>
+            <span class="notif-card-title">Weekly digest email</span>
+          </div>
+          <div class="notif-card-rows">
+            <div class="notif-toggle-row">
+              <span class="notif-toggle-label">Send me a weekly summary</span>
+              <button type="button" class="toggle-switch" [class.toggle-switch--on]="prefs.weeklyDigest"
+                      (click)="toggleNotifPref('weeklyDigest')" [attr.aria-label]="'Toggle weekly digest email'">
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="notif-save-row" *ngIf="!notifPrefsLoading() && notifPrefs()">
+        <button class="btn-create" (click)="saveNotifPrefs()" [disabled]="notifPrefsSaving()">
+          {{ notifPrefsSaving() ? 'Saving...' : 'Save changes' }}
+        </button>
+        <span class="account-success" *ngIf="notifPrefsSaved()">✓ Saved</span>
+        <div class="error-message" *ngIf="notifPrefsError()">{{ notifPrefsError() }}</div>
+      </div>
+    </section>
 
       <!-- ═══ WORKSPACE MANAGEMENT (placeholder) ═══ -->
       <section *ngIf="activeSection() === 'workspaces'" class="settings-section">

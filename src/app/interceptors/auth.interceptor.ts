@@ -2,6 +2,7 @@ import { HttpInterceptorFn, HttpErrorResponse, HttpRequest, HttpHandlerFn } from
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { catchError, throwError, switchMap, BehaviorSubject, filter, take } from 'rxjs';
+import { environment } from '../../environments/environment.development';
 
 let isRefreshing = false;
 
@@ -40,9 +41,10 @@ function isAuthEndpoint(url: string): boolean {
   return url.includes('/login') || url.includes('/refresh') || url.includes('/register');
 }
 
-/**
- * Handles 401 errors by attempting token refresh or queuing pending requests
- */
+function isExternalUrl(url: string): boolean {
+  return url.startsWith('http') && !url.startsWith(environment.apiUrl);
+}
+
 function handle401Error(
   request: HttpRequest<unknown>,
   next: HttpHandlerFn,

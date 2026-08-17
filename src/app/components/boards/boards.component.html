@@ -5,7 +5,10 @@
     <div class="sidebar-top-group">
       <div class="sidebar-account">
         <div class="account-trigger">
-          <span class="account-avatar">{{ getInitial(userName()) }}</span>
+          <span class="account-avatar">
+            <img *ngIf="userAvatarUrl()" [src]="userAvatarUrl()" alt="">
+            <ng-container *ngIf="!userAvatarUrl()">{{ getInitial(userName()) }}</ng-container>
+          </span>
           <span class="account-name">{{ userName() }}</span>
         </div>
       </div>
@@ -122,8 +125,39 @@
             </div>
 
             <p class="detail-empty-hint" *ngIf="!membersLoading() && panelMembers().length === 0">Just you, for now.</p>
+
+            <div class="members-dropdown-divider"></div>
+
+            <div class="members-dd-add-header">
+              <span class="detail-section-label">Add to board</span>
+              <button class="btn-icon" (click)="toggleAddMemberPicker($event)" title="Add a workspace member to this board">
+                {{ showAddMemberPicker() ? '×' : '+' }}
+              </button>
+            </div>
+
+            <div class="members-dd-add-list" *ngIf="showAddMemberPicker()">
+              <button
+                *ngFor="let candidate of addableMembers()"
+                class="members-dd-add-option"
+                [disabled]="addingMemberId() === candidate.id"
+                (click)="addMemberToBoard(candidate)"
+              >
+                <span class="wc-member-avatar">{{ getInitial(getWsMemberLabel(candidate)) }}</span>
+                <span class="detail-member-name">{{ getWsMemberLabel(candidate) }}</span>
+                <span *ngIf="addingMemberId() === candidate.id" class="members-dd-add-status">Adding…</span>
+              </button>
+
+              <p class="detail-empty-hint" *ngIf="addableMembers().length === 0">
+                Every workspace member is already on this board.
+              </p>
+
+              <p class="list-error-msg" *ngIf="addMemberError()">{{ addMemberError() }}</p>
+            </div>
+
           </div>
+
         </div>
+
       </div>
 
           <div class="detail-header-actions">

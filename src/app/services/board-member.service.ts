@@ -28,4 +28,8 @@ export class BoardMemberService {
       })
     );
   }
+
+  addMembers(boardId: string | number, userIds: (string | number)[]): Observable<void> {
+    return this.http.post<void>(`${this.base}/board/${boardId}/members`, { userIds });
+  }
 }
