@@ -1657,3 +1657,45 @@ select.form-input {
 @media (max-width: 900px) {
   .ws-sidebar { flex: 0 0 220px; width: 220px; padding: 1rem 0.7rem; }
 }
+
+.members-dropdown-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 0.6rem 0;
+}
+
+.members-dd-add-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.members-dd-add-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.members-dd-add-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: none;
+  border: none;
+  padding: 0.4rem 0.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.13s;
+}
+
+.members-dd-add-option:hover:not(:disabled) { background: var(--paper); }
+.members-dd-add-option:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.members-dd-add-status {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+}
