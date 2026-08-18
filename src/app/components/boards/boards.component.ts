@@ -41,7 +41,6 @@ export class BoardsComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   workspaceId = signal('');
-
   boards = signal<Board[]>([]);
   loading = signal(true);
   creating = signal(false);
@@ -49,12 +48,30 @@ export class BoardsComponent implements OnInit {
   newBoardName = '';
   selectedColor = '#0079bf';
   searchQuery = '';
-
   showInviteModal = signal(false);
   inviting = signal(false);
   inviteEmail = '';
   inviteError = signal('');
   inviteSuccess = signal(false);
+  accountMenuOpen = signal(false);
+
+  userEmail = computed(() => this.authService.user()?.email ?? '');
+
+  toggleAccountMenu(): void {
+    this.accountMenuOpen.update(open => !open);
+  }
+
+  closeAccountMenu(): void {
+    this.accountMenuOpen.set(false);
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
+
+  openSettings(): void {
+    this.router.navigate(['/settings']);
+  }
 
   boardColors = [
     '#0079bf', '#61bd4f', '#f2d600',
@@ -79,31 +96,106 @@ export class BoardsComponent implements OnInit {
   newCardDueDateInput = '';
   creatingCardModal = signal(false);
   createCardModalError = signal('');
-
-cardPriorities: CardPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
-
+  cardPriorities: CardPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
   activeCardListId = signal<string | number | null>(null);
-
   showNewListInput = signal(false);
   newListName = '';
   listError = signal<string | null>(null);
   listDeleteError = signal<{ listId: string | number; message: string } | null>(null);
-
   showMembersDropdown = signal(false);
-
   editingListId = signal<string | number | null>(null);
   listNameEdit = '';
-
   selectedCard = signal<Card | null>(null);
-
   reassigningCardId = signal<string | number | null>(null);
   isReassigningInPanel = signal(false);
-
   workspaceMembers = signal<{ id: number; firstName: string; sirName: string; email: string; avatarUrl?: string }[]>([]);
+  showAddMemberPicker = signal(false);
+  addingMemberId = signal<string | number | null>(null);
+  addMemberError = signal<string | null>(null);
+  showEditBoardDropdown = signal(false);
+  editBoardName = '';
+  editBoardDescription = '';
+  savingBoardEdit = signal(false);
+  editBoardError = signal('');
+  boardMenuView = signal<'menu' | 'edit' | 'leave'>('menu');
+  leavingBoard = signal(false);
+  leaveBoardError = signal('');
 
-showAddMemberPicker = signal(false);
-addingMemberId = signal<string | number | null>(null);
-addMemberError = signal<string | null>(null);
+  toggleEditBoardDropdown(event: Event): void {
+    event.stopPropagation();
+    if (!this.showEditBoardDropdown()) {
+      const sb = this.selectedBoard();
+      this.editBoardName = sb?.boardName || '';
+      this.editBoardDescription = sb?.boardDescription || '';
+      this.editBoardError.set('');
+      this.boardMenuView.set('menu');
+      this.leaveBoardError.set('');
+      this.showMembersDropdown.set(false);
+    }
+    this.showEditBoardDropdown.set(!this.showEditBoardDropdown());
+  }
+
+  openInviteFromBoardMenu(): void {
+    this.showEditBoardDropdown.set(false);
+    this.openInviteModal();
+  }
+
+  confirmLeaveBoard(): void {
+    const boardId = this.selectedBoardId();
+    if (!boardId || this.leavingBoard()) return;
+
+    this.leavingBoard.set(true);
+    this.leaveBoardError.set('');
+
+    this.boardMemberService.leaveBoard(boardId).subscribe({
+      next: () => {
+        this.leavingBoard.set(false);
+        this.showEditBoardDropdown.set(false);
+        this.boards.update(list => list.filter(b => b.id !== boardId));
+        this.filterBoards();
+        const remaining = this.boards();
+        if (remaining.length > 0) {
+          this.selectBoard(remaining[0]);
+        } else {
+          this.selectedBoardId.set(null);
+          this.boardLists.set([]);
+          this.panelMembers.set([]);
+        }
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.leavingBoard.set(false);
+        this.leaveBoardError.set(err?.error?.message || 'Failed to leave board. Please try again.');
+      }
+    });
+  }
+
+  closeEditBoardDropdown(): void {
+    this.showEditBoardDropdown.set(false);
+  }
+
+  saveBoardEdit(): void {
+    const boardId = this.selectedBoardId();
+    if (!boardId || !this.editBoardName.trim()) return;
+
+    this.savingBoardEdit.set(true);
+    this.editBoardError.set('');
+
+    this.boardService.updateBoard(String(boardId), {
+      boardName: this.editBoardName.trim(),
+      boardDescription: this.editBoardDescription.trim() || undefined
+    }).subscribe({
+      next: (updated) => {
+        this.boards.update(list => list.map(b => b.id === boardId ? { ...b, ...updated } : b));
+        this.filterBoards();
+        this.savingBoardEdit.set(false);
+        this.showEditBoardDropdown.set(false);
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.savingBoardEdit.set(false);
+        this.editBoardError.set(err?.error?.message || 'Failed to update board. Please try again.');
+      }
+    });
+  }
 
 addableMembers = computed(() => {
   const boardMemberIds = new Set(this.panelMembers().map(m => String(m.userId)));
@@ -310,56 +402,64 @@ private loadWorkspaceMembers(): void {
     });
   }
 
-  // ─── Invite ─────────────────────────────────────────────────────────────────
+// ─── Invite ─────────────────────────────────────────────────────────────────
 
-  openInviteModal(): void {
-    this.inviteEmail = '';
-    this.inviteError.set('');
-    this.inviteSuccess.set(false);
-    this.showInviteModal.set(true);
+inviteRole: 'admin' | 'member' = 'member';
+invitedEmails = signal<string[]>([]);
+
+openInviteModal(): void {
+  this.inviteEmail = '';
+  this.inviteError.set('');
+  this.inviteSuccess.set(false);
+  this.inviteRole = 'member';
+  this.invitedEmails.set([]);
+  this.showInviteModal.set(true);
+}
+
+closeInviteModal(): void {
+  this.showInviteModal.set(false);
+  this.inviteEmail = '';
+  this.inviteError.set('');
+  this.inviteSuccess.set(false);
+  this.invitedEmails.set([]);
+}
+
+sendInvite(): void {
+  const email = this.inviteEmail.trim().toLowerCase();
+
+  if (!email || !this.isValidEmail(email)) {
+    this.inviteError.set('Please enter a valid email address.');
+    return;
+  }
+  if (this.invitedEmails().includes(email)) {
+    this.inviteError.set('This email has already been invited.');
+    return;
   }
 
-  closeInviteModal(): void {
-    this.showInviteModal.set(false);
-    this.inviteEmail = '';
-    this.inviteError.set('');
-    this.inviteSuccess.set(false);
-  }
+  this.inviting.set(true);
+  this.inviteError.set('');
 
-  sendInvite(): void {
-    const emails = this.inviteEmail
-      .split(',')
-      .map(e => e.trim().toLowerCase())
-      .filter(e => e.length > 0);
-
-    const invalidEmails = emails.filter(e => !this.isValidEmail(e));
-
-    if (emails.length === 0 || invalidEmails.length > 0) {
-      this.inviteError.set(
-        invalidEmails.length > 0
-          ? `Invalid email(s): ${invalidEmails.join(', ')}`
-          : 'Please enter at least one email address.'
-      );
-      return;
+  this.workspaceService.inviteMember({
+    workSpaceId: this.workspaceId(),
+    invitations: [{ email, role: this.inviteRole }]
+  }).subscribe({
+    next: () => {
+      this.invitedEmails.update(list => [...list, email]);
+      this.inviteSuccess.set(true);
+      this.inviteEmail = '';
+      this.inviting.set(false);
+      setTimeout(() => this.inviteSuccess.set(false), 3000);
+    },
+    error: (err: { error?: { message?: string } }) => {
+      this.inviting.set(false);
+      this.inviteError.set(err?.error?.message || 'Failed to send invite. Please try again.');
     }
+  });
+}
 
-    this.inviting.set(true);
-    this.inviteError.set('');
-
-    this.workspaceService.inviteMember({
-      workSpaceId: this.workspaceId(),
-      invitations: emails.map(email => ({ email, role: 'member' }))
-    }).subscribe({
-      next: () => {
-        this.inviting.set(false);
-        this.inviteSuccess.set(true);
-      },
-      error: (err: { error?: { message?: string } }) => {
-        this.inviting.set(false);
-        this.inviteError.set(err?.error?.message || 'Failed to send invite. Please try again.');
-      }
-    });
-  }
+removeInvitedEmail(email: string): void {
+  this.invitedEmails.update(list => list.filter(e => e !== email));
+}
 
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

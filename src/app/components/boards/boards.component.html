@@ -4,14 +4,46 @@
 
     <div class="sidebar-top-group">
       <div class="sidebar-account">
-        <div class="account-trigger">
+      <button
+        class="account-trigger account-trigger--clickable"
+        [class.account-trigger--open]="accountMenuOpen()"
+        (click)="toggleAccountMenu()"
+      >
+        <span class="account-avatar">
+          <img *ngIf="userAvatarUrl()" [src]="userAvatarUrl()" alt="">
+          <ng-container *ngIf="!userAvatarUrl()">{{ getInitial(userName()) }}</ng-container>
+        </span>
+        <span class="account-name">{{ userName() }}</span>
+        <span class="account-chevron">⌄</span>
+      </button>
+
+      <div class="account-menu-backdrop" *ngIf="accountMenuOpen()" (click)="closeAccountMenu()"></div>
+
+      <div class="account-menu" *ngIf="accountMenuOpen()" (click)="$event.stopPropagation()">
+        <div class="account-menu-header">
           <span class="account-avatar">
             <img *ngIf="userAvatarUrl()" [src]="userAvatarUrl()" alt="">
             <ng-container *ngIf="!userAvatarUrl()">{{ getInitial(userName()) }}</ng-container>
           </span>
-          <span class="account-name">{{ userName() }}</span>
+          <div class="account-menu-id">
+            <strong>{{ userName() }}</strong>
+            <span *ngIf="userEmail()">{{ userEmail() }}</span>
+          </div>
         </div>
+
+        <div class="account-menu-section">
+          <button class="account-menu-item" (click)="openSettings(); closeAccountMenu()">
+            <span class="ami-icon">⚙</span> Settings
+          </button>
+        </div>
+
+        <div class="account-menu-divider"></div>
+
+        <button class="account-menu-item account-menu-item--danger" (click)="logout(); closeAccountMenu()">
+          <span class="ami-icon">⏻</span> Log out
+        </button>
       </div>
+    </div>
 
       <div class="sidebar-search">
         <span class="sidebar-search-icon">⌕</span>
@@ -89,104 +121,185 @@
       <!-- selected board detail -->
       <aside class="board-detail-panel" *ngIf="selectedBoard() as sb; else noBoardSelected">
 
+        <button class="btn-back-to-workspaces" (click)="goBack()">
+          ← Back to Workspaces
+        </button>
+
         <div class="detail-header">
-          <div class="detail-heading-group">
-        <div class="detail-avatar">{{ getInitial(sb.boardName) }}</div>
+        <div class="detail-heading-group">
+          <div class="detail-avatar">{{ getInitial(sb.boardName) }}</div>
 
-        <div class="detail-heading">
-          <div class="detail-heading-row">
-            <h2>{{ sb.boardName }}</h2>
-            <button
-              class="btn-members-toggle"
-              [class.btn-members-toggle--open]="showMembersDropdown()"
-              (click)="toggleMembersDropdown($event)"
-              title="Board members"
-            >⌄</button>
-          </div>
-
-          <div class="members-dropdown-backdrop" *ngIf="showMembersDropdown()" (click)="closeMembersDropdown()"></div>
-
-          <div class="members-dropdown" *ngIf="showMembersDropdown()" (click)="$event.stopPropagation()">
-            <div class="members-dropdown-header">
-              <span class="detail-section-label">Members</span>
-              <span class="detail-section-count">{{ panelMembers().length }}</span>
-            </div>
-
-            <div class="detail-members-loading" *ngIf="membersLoading()">
-              <div class="spinner spinner--sm"></div>
-            </div>
-
-            <div class="detail-member-list" *ngIf="!membersLoading() && panelMembers().length">
-              <div class="detail-member-item" *ngFor="let member of panelMembers()">
-                <span class="wc-member-avatar">{{ getInitial(member.userFullName) }}</span>
-                <span class="detail-member-name">{{ member.userFullName }}</span>
-                <span class="role-badge" [class.role-badge--owner]="member.role === 'admin' || member.role === 'owner'">{{ member.role }}</span>
-              </div>
-            </div>
-
-            <p class="detail-empty-hint" *ngIf="!membersLoading() && panelMembers().length === 0">Just you, for now.</p>
-
-            <div class="members-dropdown-divider"></div>
-
-            <div class="members-dd-add-header">
-              <span class="detail-section-label">Add to board</span>
-              <button class="btn-icon" (click)="toggleAddMemberPicker($event)" title="Add a workspace member to this board">
-                {{ showAddMemberPicker() ? '×' : '+' }}
-              </button>
-            </div>
-
-            <div class="members-dd-add-list" *ngIf="showAddMemberPicker()">
+          <div class="detail-heading">
+            <div class="detail-heading-row">
+              <h2>{{ sb.boardName }}</h2>
               <button
-                *ngFor="let candidate of addableMembers()"
-                class="members-dd-add-option"
-                [disabled]="addingMemberId() === candidate.id"
-                (click)="addMemberToBoard(candidate)"
-              >
-                <span class="wc-member-avatar">{{ getInitial(getWsMemberLabel(candidate)) }}</span>
-                <span class="detail-member-name">{{ getWsMemberLabel(candidate) }}</span>
-                <span *ngIf="addingMemberId() === candidate.id" class="members-dd-add-status">Adding…</span>
-              </button>
-
-              <p class="detail-empty-hint" *ngIf="addableMembers().length === 0">
-                Every workspace member is already on this board.
-              </p>
-
-              <p class="list-error-msg" *ngIf="addMemberError()">{{ addMemberError() }}</p>
+                class="btn-members-toggle"
+                [class.btn-members-toggle--open]="showEditBoardDropdown()"
+                (click)="toggleEditBoardDropdown($event)"
+                title="Edit board"
+              >⌄</button>
             </div>
 
-          </div>
+            <div class="members-dropdown-backdrop" *ngIf="showEditBoardDropdown()" (click)="closeEditBoardDropdown()"></div>
 
+            <div class="members-dropdown edit-board-dropdown" *ngIf="showEditBoardDropdown()" (click)="$event.stopPropagation()">
+
+  <!-- VIEW 1: menu -->
+  <ng-container *ngIf="boardMenuView() === 'menu'">
+    <div class="members-dropdown-header">
+      <span class="detail-section-label">Board options</span>
+    </div>
+    <div class="account-menu-section">
+      <button class="account-menu-item" (click)="boardMenuView.set('edit')">
+        <span class="ami-icon">✏️</span> Edit board
+      </button>
+      <button class="account-menu-item" (click)="openInviteFromBoardMenu()">
+        <span class="ami-icon">👥</span> Invite members
+      </button>
+      <button class="account-menu-item account-menu-item--danger" (click)="boardMenuView.set('leave')">
+        <span class="ami-icon">🚪</span> Leave board
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- VIEW 2: edit form -->
+  <ng-container *ngIf="boardMenuView() === 'edit'">
+    <div class="members-dropdown-header">
+      <button class="btn-icon" (click)="boardMenuView.set('menu')" title="Back">←</button>
+      <span class="detail-section-label">Edit board</span>
+    </div>
+
+    <div class="form-group">
+      <label>Board name</label>
+      <input type="text" class="form-input" [(ngModel)]="editBoardName" (keyup.enter)="saveBoardEdit()" autofocus>
+    </div>
+
+    <div class="form-group">
+      <label>Description <span class="optional">(optional)</span></label>
+      <input type="text" class="form-input" [(ngModel)]="editBoardDescription" (keyup.enter)="saveBoardEdit()">
+    </div>
+
+    <p class="list-error-msg" *ngIf="editBoardError()">{{ editBoardError() }}</p>
+
+    <div class="edit-board-actions">
+      <button class="btn-cancel" (click)="boardMenuView.set('menu')">Cancel</button>
+      <button class="btn-create" (click)="saveBoardEdit()" [disabled]="!editBoardName.trim() || savingBoardEdit()">
+        {{ savingBoardEdit() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- VIEW 3: leave confirm -->
+  <ng-container *ngIf="boardMenuView() === 'leave'">
+    <div class="members-dropdown-header">
+      <button class="btn-icon" (click)="boardMenuView.set('menu')" title="Back">←</button>
+      <span class="detail-section-label">Leave board</span>
+    </div>
+
+    <p class="detail-empty-hint">
+      Are you sure you want to leave "{{ selectedBoard()?.boardName }}"? If you're the only admin, the board will be deleted for everyone.
+    </p>
+
+    <p class="list-error-msg" *ngIf="leaveBoardError()">{{ leaveBoardError() }}</p>
+
+    <div class="edit-board-actions">
+      <button class="btn-cancel" (click)="boardMenuView.set('menu')">Cancel</button>
+      <button class="btn-delete-confirm" (click)="confirmLeaveBoard()" [disabled]="leavingBoard()">
+        {{ leavingBoard() ? 'Leaving…' : 'Yes, leave' }}
+      </button>
+    </div>
+  </ng-container>
+
+</div>
+          </div>
         </div>
 
+  <div class="board-actions-group">
+    <div class="manage-members-wrap">
+      <button
+        class="btn-manage-members"
+        [class.btn-manage-members--active]="showMembersDropdown()"
+        (click)="toggleMembersDropdown($event)"
+      >
+        Manage Members
+      </button>
+
+      <div class="members-dropdown-backdrop" *ngIf="showMembersDropdown()" (click)="closeMembersDropdown()"></div>
+
+      <div class="members-dropdown manage-members-dropdown" *ngIf="showMembersDropdown()" (click)="$event.stopPropagation()">
+        <div class="members-dropdown-header">
+          <span class="detail-section-label">Members</span>
+          <span class="detail-section-count">{{ panelMembers().length }}</span>
+        </div>
+
+        <div class="detail-members-loading" *ngIf="membersLoading()">
+          <div class="spinner spinner--sm"></div>
+        </div>
+
+        <div class="detail-member-list" *ngIf="!membersLoading() && panelMembers().length">
+          <div class="detail-member-item" *ngFor="let member of panelMembers()">
+            <span class="wc-member-avatar">{{ getInitial(member.userFullName) }}</span>
+            <span class="detail-member-name">{{ member.userFullName }}</span>
+            <span class="role-badge" [class.role-badge--owner]="member.role === 'admin' || member.role === 'owner'">{{ member.role }}</span>
+          </div>
+        </div>
+
+        <p class="detail-empty-hint" *ngIf="!membersLoading() && panelMembers().length === 0">Just you, for now.</p>
+
+        <div class="members-dropdown-divider"></div>
+
+        <div class="members-dd-add-header">
+          <span class="detail-section-label">Add to board</span>
+          <button class="btn-icon" (click)="toggleAddMemberPicker($event)" title="Add a workspace member to this board">
+            {{ showAddMemberPicker() ? '×' : '+' }}
+          </button>
+        </div>
+
+        <div class="members-dd-add-list" *ngIf="showAddMemberPicker()">
+          <button
+            *ngFor="let candidate of addableMembers()"
+            class="members-dd-add-option"
+            [disabled]="addingMemberId() === candidate.id"
+            (click)="addMemberToBoard(candidate)"
+          >
+            <span class="wc-member-avatar">{{ getInitial(getWsMemberLabel(candidate)) }}</span>
+            <span class="detail-member-name">{{ getWsMemberLabel(candidate) }}</span>
+            <span *ngIf="addingMemberId() === candidate.id" class="members-dd-add-status">Adding…</span>
+          </button>
+
+          <p class="detail-empty-hint" *ngIf="addableMembers().length === 0">
+            Every workspace member is already on this board.
+          </p>
+
+          <p class="list-error-msg" *ngIf="addMemberError()">{{ addMemberError() }}</p>
+        </div>
       </div>
+    </div>
 
-          <div class="detail-header-actions">
-            <ng-container *ngIf="!showNewListInput(); else newListFormHeader">
-              <button class="btn-add-list-header" (click)="toggleNewListInput()">
-                + {{ boardLists().length === 0 ? 'Add a list' : 'Add another list' }}
-              </button>
-            </ng-container>
+    <div class="detail-header-actions">
+      <button class="btn-add-list-header" [class.btn-add-list-header--active]="showNewListInput()" (click)="toggleNewListInput()">
+        + {{ boardLists().length === 0 ? 'Add a list' : 'Add another list' }}
+      </button>
 
-            <ng-template #newListFormHeader>
-              <div class="new-list-form-wrap">
-                <div class="new-list-form-inline">
-                  <input
-                    type="text"
-                    [(ngModel)]="newListName"
-                    placeholder="Enter list name..."
-                    class="list-name-input"
-                    (keyup.enter)="createList()"
-                    (keyup.escape)="toggleNewListInput()"
-                    autofocus
-                  >
-                  <button class="btn-create" (click)="createList()">Add</button>
-                  <button class="btn-cancel" (click)="toggleNewListInput()">✕</button>
-                </div>
-                <p class="list-error-msg" *ngIf="listError()">{{ listError() }}</p>
-              </div>
-            </ng-template>
-          </div>
+      <div class="new-list-form-wrap" *ngIf="showNewListInput()">
+        <div class="new-list-form-inline">
+          <input
+            type="text"
+            [(ngModel)]="newListName"
+            placeholder="Enter list name..."
+            class="list-name-input"
+            (keyup.enter)="createList()"
+            (keyup.escape)="toggleNewListInput()"
+            autofocus
+          >
+          <button class="btn-create" (click)="createList()">Add</button>
+          <button class="btn-cancel" (click)="toggleNewListInput()">✕</button>
         </div>
+        <p class="list-error-msg" *ngIf="listError()">{{ listError() }}</p>
+      </div>
+    </div>
+  </div>
+</div>
 
         <p class="detail-desc" *ngIf="sb.boardDescription">{{ sb.boardDescription }}</p>
         <p class="detail-desc no-desc" *ngIf="!sb.boardDescription">No description yet</p>
@@ -334,23 +447,41 @@
         <button class="btn-close" (click)="closeInviteModal()">×</button>
       </div>
       <div class="modal-body">
-        <div class="invite-success" *ngIf="inviteSuccess()">
-          <div class="success-icon">✉️</div>
-          <h3>Invite sent!</h3>
-          <p>Invitations have been sent successfully to your colleagues. They'll be able to join this workspace and start collaborating.</p>
+        <p class="invite-description">Enter your colleague's email address and we'll send them an invite to join this workspace.</p>
+
+        <div class="form-group">
+          <label for="inviteEmail">Email Address</label>
+          <input type="email" id="inviteEmail" class="form-input" placeholder="colleague@company.com" [(ngModel)]="inviteEmail" (keyup.enter)="sendInvite()" autofocus>
         </div>
-        <div *ngIf="!inviteSuccess()">
-          <p class="invite-description">Enter your colleague's email address and we'll send them an invite to join this workspace.</p>
-          <div class="form-group">
-            <label for="inviteEmail">Email Address</label>
-            <input type="email" id="inviteEmail" class="form-input" placeholder="email1@example.com, email2@example.com" [(ngModel)]="inviteEmail" (keyup.enter)="sendInvite()" autofocus>
+
+        <div class="form-group">
+          <label>Role</label>
+          <div class="role-picker">
+            <button type="button" class="chip-option" [class.chip-option--active]="inviteRole === 'member'" (click)="inviteRole = 'member'">Member</button>
+            <button type="button" class="chip-option" [class.chip-option--active]="inviteRole === 'admin'" (click)="inviteRole = 'admin'">Admin</button>
           </div>
-          <div class="error-message" *ngIf="inviteError()">{{ inviteError() }}</div>
+        </div>
+
+        <div class="invite-success" *ngIf="inviteSuccess()">✓ Invite sent</div>
+        <div class="error-message" *ngIf="inviteError()">{{ inviteError() }}</div>
+
+        <div class="invited-list" *ngIf="invitedEmails().length > 0">
+          <p class="invited-label">Invites sent</p>
+          <div class="invited-chip" *ngFor="let email of invitedEmails()">
+            <span class="chip-dot">✉</span>
+            <span class="chip-email">{{ email }}</span>
+            <button class="chip-remove" (click)="removeInvitedEmail(email)" aria-label="Remove">×</button>
+          </div>
+        </div>
+
+        <div class="role-hint">
+          <strong>Admin</strong> Has overall authority on that workspace. <br>
+          <strong>Member</strong> Can view workspaces, boards, lists and move cards.
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-cancel" (click)="closeInviteModal()">{{ inviteSuccess() ? 'Close' : 'Cancel' }}</button>
-        <button *ngIf="!inviteSuccess()" class="btn-create" (click)="sendInvite()" [disabled]="!inviteEmail.trim() || inviting()">
+        <button class="btn-cancel" (click)="closeInviteModal()">{{ invitedEmails().length > 0 ? 'Done' : 'Cancel' }}</button>
+        <button class="btn-create" (click)="sendInvite()" [disabled]="!inviteEmail.trim() || inviting()">
           {{ inviting() ? 'Sending...' : 'Send Invite' }}
         </button>
       </div>

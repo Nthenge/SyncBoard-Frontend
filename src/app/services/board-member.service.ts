@@ -32,4 +32,8 @@ export class BoardMemberService {
   addMembers(boardId: string | number, userIds: (string | number)[]): Observable<void> {
     return this.http.post<void>(`${this.base}/board/${boardId}/members`, { userIds });
   }
+
+  leaveBoard(boardId: string | number): Observable<void> {
+  return this.http.delete<void>(`${this.base}/board/${boardId}/members/leave`);
+}
 }

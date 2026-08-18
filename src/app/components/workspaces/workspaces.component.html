@@ -278,9 +278,50 @@
   </div>
 
   <div class="ws-topbar-actions">
-    <button class="icon-btn" (click)="openNotifications()" aria-label="Notifications">
-      <span class="icon-btn-glyph">🔔</span>
-    </button>
+    <div class="notif-dd-wrap">
+      <button class="icon-btn" (click)="toggleNotifDropdown($event)" aria-label="Notifications">
+        <span class="icon-btn-glyph">🔔</span>
+        <span class="notif-badge" *ngIf="unreadCount() > 0">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+      </button>
+
+      <div class="notif-dd-backdrop" *ngIf="showNotifDropdown()" (click)="closeNotifDropdown()"></div>
+
+      <div class="notif-dd-panel" *ngIf="showNotifDropdown()" (click)="$event.stopPropagation()">
+        <div class="notif-dd-header">
+          <span class="notif-dd-title">Notifications</span>
+          <button class="notif-dd-mark-all" [disabled]="unreadCount() === 0" (click)="markAllNotificationsRead()">
+            Mark all read
+          </button>
+        </div>
+
+        <div class="notif-dd-loading" *ngIf="notifLoading()">
+          <div class="spinner spinner--sm"></div>
+        </div>
+
+        <div class="notif-dd-list" *ngIf="!notifLoading() && notifications().length">
+          <div
+            class="notif-item"
+            [class.notif-item--unread]="!n.read"
+            *ngFor="let n of notifications()"
+            (click)="markNotificationRead(n)"
+          >
+            <span class="notif-item-dot" *ngIf="!n.read"></span>
+            <div class="notif-item-body">
+              <p class="notif-item-message">{{ n.message }}</p>
+              <span class="notif-item-time">{{ getNotifTimeLabel(n) }}</span>
+            </div>
+          </div>
+
+          <button class="notif-dd-load-more" *ngIf="hasMoreNotifications()" [disabled]="notifLoadingMore()" (click)="loadMoreNotifications()">
+            {{ notifLoadingMore() ? 'Loading...' : 'Load more' }}
+          </button>
+        </div>
+
+        <p class="sidebar-empty-hint" *ngIf="!notifLoading() && notifications().length === 0">
+          No notifications yet.
+        </p>
+      </div>
+    </div>
     <button class="icon-btn" (click)="openSettings()" aria-label="Settings">
       <span class="icon-btn-glyph">⚙</span>
     </button>
@@ -336,11 +377,11 @@
           <button class="wc-kebab" (click)="toggleCardMenu(ws.id, $event)" aria-label="Workspace options">⋯</button>
           <div class="wc-menu-backdrop" *ngIf="cardMenuOpenId() === ws.id" (click)="closeCardMenuBackdrop($event)"></div>
           <div class="wc-menu" *ngIf="cardMenuOpenId() === ws.id" (click)="$event.stopPropagation()">
-            <button class="wc-menu-item" (click)="editWorkspace(ws, $event)">Edit workspace</button>
-            <button class="wc-menu-item" *ngIf="getRole(ws) === 'Admin'" (click)="inviteToWorkspace(ws, $event)">Invite members</button>
-            <div class="wc-menu-divider"></div>
-            <button class="wc-menu-item wc-menu-item--danger" (click)="leaveWorkspace(ws, $event)">Leave workspace</button>
-          </div>
+          <button class="wc-menu-item" *ngIf="getRole(ws) === 'Admin'" (click)="editWorkspace(ws, $event)">Edit workspace</button>
+          <button class="wc-menu-item" *ngIf="getRole(ws) === 'Admin'" (click)="inviteToWorkspace(ws, $event)">Invite members</button>
+          <div class="wc-menu-divider" *ngIf="getRole(ws) === 'Admin'"></div>
+          <button class="wc-menu-item wc-menu-item--danger" (click)="leaveWorkspace(ws, $event)">Leave workspace</button>
+        </div>
         </div>
       </div>
 
