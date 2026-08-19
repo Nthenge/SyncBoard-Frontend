@@ -86,6 +86,12 @@ export class SettingsComponent implements OnInit {
   showDeleteConfirm = signal(false);
   deleting = signal(false);
   deleteError = signal('');
+  // Add state to your Angular Component
+navMenuOpen = signal<boolean>(false);
+
+toggleNavMenu() {
+  this.navMenuOpen.update(open => !open);
+}
 
   loadNotifPrefs(): void {
     this.notifPrefsLoading.set(true);
@@ -234,6 +240,7 @@ export class SettingsComponent implements OnInit {
 
   selectSection(section: SettingsSection): void {
     this.activeSection.set(section);
+    this.navMenuOpen.set(false);
     if (section === 'account') {
       this.loadAccountForm();
     }

@@ -4,12 +4,16 @@
   
   <header class="settings-topbar">
     <button class="btn-back" (click)="goBack()">← Back to Workspaces</button>
+    <!-- Mobile Navigation Toggle Button -->
+    <button class="nav-toggle-btn" (click)="toggleNavMenu()" aria-label="Toggle navigation menu">
+      <span>{{ navMenuOpen() ? 'Close' : 'Menu' }}</span>
+    </button>
   </header>
 
   <div class="settings-split">
 
     <!-- LEFT: section tabs -->
-    <nav class="settings-nav">
+    <nav class="settings-nav" [class.is-open]="navMenuOpen()">
       <button class="settings-nav-item" [class.settings-nav-item--active]="activeSection() === 'support'" (click)="selectSection('support')">
         <span class="sni-icon">💬</span> Support
       </button>

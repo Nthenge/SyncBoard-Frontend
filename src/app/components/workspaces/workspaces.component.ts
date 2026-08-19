@@ -97,6 +97,11 @@ export class WorkspacesComponent implements OnInit {
   notifPage = signal(0);
   notifTotalPages = signal(0);
   unreadCount = signal(0);
+  sidebarMenuOpen = signal<boolean>(false);
+
+  toggleSidebarMenu() {
+    this.sidebarMenuOpen.update(open => !open);
+  }
 
   private scratchpadChange$ = new Subject<string>();
 
