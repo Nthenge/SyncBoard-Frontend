@@ -8,6 +8,8 @@ import { TalkService } from '../../services/talk.service';
 import { FAQ, Issue } from '../../models/board.models';
 import { NotificationPreferenceService } from '../../services/notification-preference.service';
 import { NotificationPreference } from '../../models/board.models';
+import { ToastService } from '../../services/toast.service';
+import { ToastComponent } from '../toast/toast.component';
 
 type SettingsSection =
   | 'support' | 'faq' | 'account' | 'notifications'
@@ -16,7 +18,7 @@ type SettingsSection =
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   templateUrl: './settings.html',
   styleUrls: ['./settings.css']
 })
@@ -26,6 +28,7 @@ export class SettingsComponent implements OnInit {
   private faqService = inject(FaqService);
   private talkService = inject(TalkService);
   private notificationPreferenceService = inject(NotificationPreferenceService);
+  private toast = inject(ToastService);
 
   activeSection = signal<SettingsSection>('support');
 
@@ -42,29 +45,32 @@ export class SettingsComponent implements OnInit {
   notifPrefsSaved = signal(false);
   notifPrefsError = signal('');
 
-onAvatarFileSelected(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
+  onAvatarFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
 
-  if (!file.type.startsWith('image/')) {
-    this.avatarError.set('Please select an image file.');
-    return;
+    if (!file.type.startsWith('image/')) {
+      this.avatarError.set('Please select an image file.');
+      return;
+    }
+
+    this.avatarUploading.set(true);
+    this.avatarError.set('');
+    this.authService.uploadAvatar(file).then((url: string) => {
+      this.accountForm.avatarUrl = url;
+      this.avatarUploading.set(false);
+      this.toast.show('Profile picture updated.', 'success');
+    }).catch((err: Error) => {
+      this.avatarUploading.set(false);
+      const message = err.message || 'Failed to upload image.';
+      this.avatarError.set(message);
+      this.toast.show(message, 'error');
+    });
   }
 
-  this.avatarUploading.set(true);
-  this.avatarError.set('');
-  this.authService.uploadAvatar(file).then((url: string) => {
-    this.accountForm.avatarUrl = url;
-    this.avatarUploading.set(false);
-  }).catch((err: Error) => {
-    this.avatarUploading.set(false);
-    this.avatarError.set(err.message || 'Failed to upload image.');
-  });
-}
-
   userEmail = computed(() => this.authService.user()?.email ?? '');
-    accountForm = {
+  accountForm = {
     firstName: '',
     sirName: '',
     email: '',
@@ -91,7 +97,9 @@ onAvatarFileSelected(event: Event): void {
       },
       error: () => {
         this.notifPrefsLoading.set(false);
-        this.notifPrefsError.set('Failed to load notification preferences.');
+        const message = 'Failed to load notification preferences.';
+        this.notifPrefsError.set(message);
+        this.toast.show(message, 'error');
       }
     });
   }
@@ -116,36 +124,41 @@ onAvatarFileSelected(event: Event): void {
         this.notifPrefs.set(updated);
         this.notifPrefsSaving.set(false);
         this.notifPrefsSaved.set(true);
+        this.toast.show('Notification preferences saved.', 'success');
         setTimeout(() => this.notifPrefsSaved.set(false), 3000);
       },
       error: (err: { error?: { message?: string } }) => {
         this.notifPrefsSaving.set(false);
-        this.notifPrefsError.set(err?.error?.message || 'Failed to save. Please try again.');
+        const message = err?.error?.message || 'Failed to save. Please try again.';
+        this.notifPrefsError.set(message);
+        this.toast.show(message, 'error');
       }
     });
   }
 
-openDeleteConfirm(): void {
-  this.deleteError.set('');
-  this.showDeleteConfirm.set(true);
-}
+  openDeleteConfirm(): void {
+    this.deleteError.set('');
+    this.showDeleteConfirm.set(true);
+  }
 
-closeDeleteConfirm(): void {
-  if (this.deleting()) return;
-  this.showDeleteConfirm.set(false);
-}
+  closeDeleteConfirm(): void {
+    if (this.deleting()) return;
+    this.showDeleteConfirm.set(false);
+  }
 
-confirmDeleteAccount(): void {
-  this.deleting.set(true);
-  this.deleteError.set('');
+  confirmDeleteAccount(): void {
+    this.deleting.set(true);
+    this.deleteError.set('');
 
-  this.authService.deleteAccount().then(() => {
-    this.deleting.set(false);
-  }).catch((err: Error) => {
-    this.deleting.set(false);
-    this.deleteError.set(err.message);
-  });
-}
+    this.authService.deleteAccount().then(() => {
+      this.deleting.set(false);
+      this.toast.show('Account deleted.', 'success');
+    }).catch((err: Error) => {
+      this.deleting.set(false);
+      this.deleteError.set(err.message);
+      this.toast.show(err.message || 'Failed to delete account. Please try again.', 'error');
+    });
+  }
 
   loadAccountForm(): void {
     const user = this.authService.user();
@@ -158,34 +171,38 @@ confirmDeleteAccount(): void {
     this.accountForm.confirmPassword = '';
   }
 
-saveAccount(): void {
-  this.accountError.set('');
-  this.accountSuccess.set('');
+  saveAccount(): void {
+    this.accountError.set('');
+    this.accountSuccess.set('');
 
-  if (this.accountForm.newPassword && this.accountForm.newPassword !== this.accountForm.confirmPassword) {
-    this.accountError.set('Passwords do not match.');
-    return;
+    if (this.accountForm.newPassword && this.accountForm.newPassword !== this.accountForm.confirmPassword) {
+      const message = 'Passwords do not match.';
+      this.accountError.set(message);
+      this.toast.show(message, 'error');
+      return;
+    }
+
+    this.accountSaving.set(true);
+
+    this.authService.updateProfile({
+      firstName: this.accountForm.firstName.trim(),
+      sirName: this.accountForm.sirName.trim(),
+      email: this.accountForm.email,
+      avatarUrl: this.accountForm.avatarUrl,
+      password: this.accountForm.newPassword || undefined
+    }).then(() => {
+      this.accountSaving.set(false);
+      this.accountSuccess.set('Profile updated successfully.');
+      this.toast.show('Profile updated.', 'success');
+      this.accountForm.newPassword = '';
+      this.accountForm.confirmPassword = '';
+      setTimeout(() => this.accountSuccess.set(''), 3000);
+    }).catch((err: Error) => {
+      this.accountSaving.set(false);
+      this.accountError.set(err.message);
+      this.toast.show(err.message || 'Failed to update profile. Please try again.', 'error');
+    });
   }
-
-  this.accountSaving.set(true);
-
-  this.authService.updateProfile({
-    firstName: this.accountForm.firstName.trim(),
-    sirName: this.accountForm.sirName.trim(),
-    email: this.accountForm.email, 
-    avatarUrl: this.accountForm.avatarUrl,
-    password: this.accountForm.newPassword || undefined
-  }).then(() => {
-    this.accountSaving.set(false);
-    this.accountSuccess.set('Profile updated successfully.');
-    this.accountForm.newPassword = '';
-    this.accountForm.confirmPassword = '';
-    setTimeout(() => this.accountSuccess.set(''), 3000);
-  }).catch((err: Error) => {
-    this.accountSaving.set(false);
-    this.accountError.set(err.message);
-  });
-}
 
   faqs = signal<FAQ[]>([]);
   faqsLoading = signal(false);
@@ -226,6 +243,7 @@ saveAccount(): void {
   }
 
   loadFaqs(): void {
+    // Passive load — no toast, avoids greeting the user with an error on page open.
     this.faqsLoading.set(true);
     this.faqService.getActiveFaqs().subscribe({
       next: (faqs) => {
@@ -244,6 +262,7 @@ saveAccount(): void {
   }
 
   loadIssues(): void {
+    // Passive load — no toast for the same reason as loadFaqs.
     this.talkService.getActiveIssues().subscribe({
       next: (response: any) => {
         const list = Array.isArray(response) ? response : (response?.data ?? []);
@@ -270,10 +289,13 @@ saveAccount(): void {
         this.talkSuccess.set(true);
         this.talkForm.message = '';
         this.talkForm.issueId = null;
+        this.toast.show('Message sent to support.', 'success');
       },
       error: (err: { error?: { message?: string } }) => {
         this.talkSubmitting.set(false);
-        this.talkError.set(err?.error?.message || 'Failed to send message. Please try again.');
+        const message = err?.error?.message || 'Failed to send message. Please try again.';
+        this.talkError.set(message);
+        this.toast.show(message, 'error');
       }
     });
   }

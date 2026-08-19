@@ -18,6 +18,8 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { NotificationService } from '../../services/notification.service';
 import { AppNotification } from '../../models/board.models';
+import { ToastService } from '../../services/toast.service';
+import { ToastComponent } from '../toast/toast.component';
 
 type ModalStep = 'create' | 'invite';
 
@@ -38,7 +40,7 @@ export interface RecentBoardSummary {
 @Component({
   selector: 'app-workspaces',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ToastComponent],
   templateUrl: './workspaces.component.html',
   styleUrls: ['./workspaces.component.css']
 })
@@ -51,6 +53,7 @@ export class WorkspacesComponent implements OnInit {
   private cardService = inject(CardService);
   private boardMemberService = inject(BoardMemberService);
   private notificationService = inject(NotificationService);
+  private toast = inject(ToastService);
 
   workspaceBoards = signal<Board[]>([]);
   boardsLoading = signal(false);
@@ -81,7 +84,6 @@ export class WorkspacesComponent implements OnInit {
   highlightedCardId = signal<string | number | null>(null);
   assignedTasks = signal<AssignedCardSummary[]>([]);
   starredBoards = signal<Board[]>([]);
-  leaveWorkspaceError = signal('');
   showEditWorkspaceModal = signal(false);
   editWorkspaceTarget = signal<Workspace | null>(null);
   editWorkspaceName = '';
@@ -120,7 +122,10 @@ export class WorkspacesComponent implements OnInit {
   loadAssignedTasks(): void {
     this.cardService.getAssignedToMe().subscribe({
       next: (tasks) => this.assignedTasks.set(tasks),
-      error: () => this.assignedTasks.set([])
+      error: () => {
+        this.assignedTasks.set([]);
+        this.toast.show('Failed to load your assigned cards.', 'error');
+      }
     });
   }
 
@@ -152,88 +157,97 @@ export class WorkspacesComponent implements OnInit {
         this.selectedBoardId.set(targetBoard.id);
         this.loadBoardListsAndHighlight(targetBoard.id, task.listId, task.cardId);
       },
-      error: () => this.boardsLoading.set(false)
+      error: () => {
+        this.boardsLoading.set(false);
+        this.toast.show('Failed to open that card\'s board.', 'error');
+      }
     });
   }
 
-    toggleNotifDropdown(event: Event): void {
-      event.stopPropagation();
-      const opening = !this.showNotifDropdown();
-      this.showNotifDropdown.set(opening);
-      if (opening) {
-        this.loadNotifications(true);
+  toggleNotifDropdown(event: Event): void {
+    event.stopPropagation();
+    const opening = !this.showNotifDropdown();
+    this.showNotifDropdown.set(opening);
+    if (opening) {
+      this.loadNotifications(true);
+    }
+  }
+
+  closeNotifDropdown(): void {
+    this.showNotifDropdown.set(false);
+  }
+
+  loadUnreadCount(): void {
+    // Fired silently on init — no toast, this is a passive badge count.
+    this.notificationService.getUnreadCount().subscribe({
+      next: (count) => this.unreadCount.set(count),
+      error: () => {}
+    });
+  }
+
+  loadNotifications(reset: boolean): void {
+    const page = reset ? 0 : this.notifPage();
+
+    if (reset) {
+      this.notifLoading.set(true);
+    } else {
+      this.notifLoadingMore.set(true);
+    }
+
+    this.notificationService.getNotifications(page, 10).subscribe({
+      next: (result) => {
+        this.notifications.set(reset ? result.content : [...this.notifications(), ...result.content]);
+        this.notifPage.set(result.number);
+        this.notifTotalPages.set(result.totalPages);
+        this.notifLoading.set(false);
+        this.notifLoadingMore.set(false);
+      },
+      error: () => {
+        this.notifLoading.set(false);
+        this.notifLoadingMore.set(false);
+        this.toast.show('Failed to load notifications.', 'error');
       }
-    }
+    });
+  }
 
-    closeNotifDropdown(): void {
-      this.showNotifDropdown.set(false);
-    }
+  loadMoreNotifications(): void {
+    if (this.notifPage() + 1 >= this.notifTotalPages()) return;
+    this.notifPage.set(this.notifPage() + 1);
+    this.loadNotifications(false);
+  }
 
-    loadUnreadCount(): void {
-      this.notificationService.getUnreadCount().subscribe({
-        next: (count) => this.unreadCount.set(count),
-        error: () => {}
-      });
-    }
+  hasMoreNotifications(): boolean {
+    return this.notifPage() + 1 < this.notifTotalPages();
+  }
 
-    loadNotifications(reset: boolean): void {
-      const page = reset ? 0 : this.notifPage();
+  markNotificationRead(notification: AppNotification): void {
+    if (notification.read) return;
 
-      if (reset) {
-        this.notifLoading.set(true);
-      } else {
-        this.notifLoadingMore.set(true);
-      }
+    this.notifications.update(list =>
+      list.map(n => n.id === notification.id ? { ...n, read: true } : n)
+    );
+    this.unreadCount.update(count => Math.max(0, count - 1));
 
-      this.notificationService.getNotifications(page, 10).subscribe({
-        next: (result) => {
-          this.notifications.set(reset ? result.content : [...this.notifications(), ...result.content]);
-          this.notifPage.set(result.number);
-          this.notifTotalPages.set(result.totalPages);
-          this.notifLoading.set(false);
-          this.notifLoadingMore.set(false);
-        },
-        error: () => {
-          this.notifLoading.set(false);
-          this.notifLoadingMore.set(false);
-        }
-      });
-    }
+    this.notificationService.markRead(notification.id).subscribe({
+      error: () => this.toast.show('Failed to mark notification as read.', 'error')
+    });
+  }
 
-    loadMoreNotifications(): void {
-      if (this.notifPage() + 1 >= this.notifTotalPages()) return;
-      this.notifPage.set(this.notifPage() + 1);
-      this.loadNotifications(false);
-    }
+  markAllNotificationsRead(): void {
+    if (this.unreadCount() === 0) return;
 
-    hasMoreNotifications(): boolean {
-      return this.notifPage() + 1 < this.notifTotalPages();
-    }
+    this.notifications.update(list => list.map(n => ({ ...n, read: true })));
+    this.unreadCount.set(0);
 
-    markNotificationRead(notification: AppNotification): void {
-      if (notification.read) return;
+    this.notificationService.markAllRead().subscribe({
+      error: () => this.toast.show('Failed to mark all notifications as read.', 'error')
+    });
+  }
 
-      this.notifications.update(list =>
-        list.map(n => n.id === notification.id ? { ...n, read: true } : n)
-      );
-      this.unreadCount.update(count => Math.max(0, count - 1));
-
-      this.notificationService.markRead(notification.id).subscribe({ error: () => {} });
-    }
-
-    markAllNotificationsRead(): void {
-      if (this.unreadCount() === 0) return;
-
-      this.notifications.update(list => list.map(n => ({ ...n, read: true })));
-      this.unreadCount.set(0);
-
-      this.notificationService.markAllRead().subscribe({ error: () => {} });
-    }
-
-    getNotifTimeLabel(notification: AppNotification): string {
-      const date = new Date(notification.createdAt);
-      return isNaN(date.getTime()) ? '' : this.timeAgo(date);
-    }
+  getNotifTimeLabel(notification: AppNotification): string {
+    const date = new Date(notification.createdAt);
+    return isNaN(date.getTime()) ? '' : this.timeAgo(date);
+  }
 
   myAssignedTasks = computed(() => {
     const uid = this.currentUserId();
@@ -255,6 +269,7 @@ export class WorkspacesComponent implements OnInit {
   });
 
   loadStarredBoards(): void {
+    // Passive init load — no toast, avoids stacking toasts on page load.
     this.boardService.getStarredBoards().subscribe({
       next: (boards) => this.starredBoards.set(boards),
       error: () => this.starredBoards.set([])
@@ -264,6 +279,7 @@ export class WorkspacesComponent implements OnInit {
   starredWorkspaces = signal<Workspace[]>([]);
 
   loadStarredWorkspaces(): void {
+    // Passive init load — no toast, avoids stacking toasts on page load.
     this.workspaceService.getStarredWorkspaces().subscribe({
       next: (workspaces) => this.starredWorkspaces.set(workspaces),
       error: () => this.starredWorkspaces.set([])
@@ -326,35 +342,37 @@ export class WorkspacesComponent implements OnInit {
   currentUserId = computed(() => this.authService.user()?.id ?? null);
 
   ngOnInit(): void {
-  this.loadWorkspaces();
-  this.loadScratchpad();
-  this.loadRecentBoards();
-  this.loadStarredBoards();
-  this.loadStarredWorkspaces();
-  this.loadUnreadCount();
+    this.loadWorkspaces();
+    this.loadScratchpad();
+    this.loadRecentBoards();
+    this.loadStarredBoards();
+    this.loadStarredWorkspaces();
+    this.loadUnreadCount();
 
-  this.scratchpadChange$.pipe(
-    debounceTime(1500),
-    distinctUntilChanged()
-  ).subscribe(content => this.saveScratchpad(content));
-}
+    this.scratchpadChange$.pipe(
+      debounceTime(1500),
+      distinctUntilChanged()
+    ).subscribe(content => this.saveScratchpad(content));
+  }
 
-loadRecentBoards(): void {
-  this.boardService.getRecentBoards(5).subscribe({
-    next: (recent) => this.recentBoards.set(recent),
-    error: () => this.recentBoards.set([])
-  });
-}
+  loadRecentBoards(): void {
+    // Passive init load — no toast, avoids stacking toasts on page load.
+    this.boardService.getRecentBoards(5).subscribe({
+      next: (recent) => this.recentBoards.set(recent),
+      error: () => this.recentBoards.set([])
+    });
+  }
 
-loadScratchpad(): void {
-  this.workspaceService.getScratchpad().subscribe({
-    next: (res) => {
-      this.scratchpadText = res?.content ?? '';
-      this.scratchpadSavedAt.set(res?.updatedAt ? new Date(res.updatedAt) : null);
-    },
-    error: () => {} // leave scratchpad empty on failure — non-critical feature
-  });
-}
+  loadScratchpad(): void {
+    // Passive init load — non-critical feature, no toast.
+    this.workspaceService.getScratchpad().subscribe({
+      next: (res) => {
+        this.scratchpadText = res?.content ?? '';
+        this.scratchpadSavedAt.set(res?.updatedAt ? new Date(res.updatedAt) : null);
+      },
+      error: () => {}
+    });
+  }
 
   onScratchpadInput(value: string): void {
     this.scratchpadText = value;
@@ -362,129 +380,144 @@ loadScratchpad(): void {
   }
 
   private saveScratchpad(content: string): void {
+    // Autosaves on a 1.5s debounce — a success toast per keystroke pause
+    // would be noisy, so only surface a failure (the "Saved {time}" label
+    // already gives success feedback in the panel itself).
     this.scratchpadSaving.set(true);
     this.workspaceService.updateScratchpad(content).subscribe({
       next: (res) => {
         this.scratchpadSaving.set(false);
         this.scratchpadSavedAt.set(res?.updatedAt ? new Date(res.updatedAt) : new Date());
       },
-      error: () => this.scratchpadSaving.set(false)
+      error: () => {
+        this.scratchpadSaving.set(false);
+        this.toast.show('Failed to save scratchpad note.', 'error');
+      }
     });
   }
 
   clearScratchpad(): void {
-    if (!this.scratchpadText.trim()) return; 
+    if (!this.scratchpadText.trim()) return;
     this.scratchpadText = '';
-    this.scratchpadChange$.next(''); 
+    this.scratchpadChange$.next('');
   }
 
   loadWorkspaces(): void {
-  this.loading.set(true);
-  this.workspaceService.getMyWorkspaces().subscribe({
-    next: (workspaces) => {
-      this.workspaces.set(workspaces);
-      this.loading.set(false);
-      if (workspaces.length > 0 && this.activeWorkspaceId() === null) {
-        this.activeWorkspaceId.set(workspaces[0].id);
-        this.loadBoardsForWorkspace(workspaces[0].id);
+    this.loading.set(true);
+    this.workspaceService.getMyWorkspaces().subscribe({
+      next: (workspaces) => {
+        this.workspaces.set(workspaces);
+        this.loading.set(false);
+        if (workspaces.length > 0 && this.activeWorkspaceId() === null) {
+          this.activeWorkspaceId.set(workspaces[0].id);
+          this.loadBoardsForWorkspace(workspaces[0].id);
+        }
+      },
+      error: () => {
+        this.loading.set(false);
+        this.toast.show('Failed to load workspaces.', 'error');
       }
-    },
-    error: () => this.loading.set(false)
-  });
-}
-
-private loadBoardsForWorkspace(workspaceId: string | number): void {
-  this.boardsLoading.set(true);
-  this.boardsError.set('');
-  this.boardService.getBoardsByWorkspace(String(workspaceId)).subscribe({
-    next: (boards) => {
-      this.workspaceBoards.set(boards);
-      this.boardsLoading.set(false);
-      if (boards.length > 0) {
-        this.selectedBoardId.set(boards[0].id);
-        this.loadBoardLists(boards[0].id);
-      } else {
-        this.clearSelectedBoard();
-      }
-    },
-    error: () => {
-      this.boardsLoading.set(false);
-      this.boardsError.set('Failed to load boards.');
-    }
-  });
-}
-
-selectBoard(board: Board): void {
-  if (this.selectedBoardId() === board.id) {
-    this.clearSelectedBoard();
-    return;
+    });
   }
-  this.selectedBoardId.set(board.id);
-  this.selectedListId.set(null);
-  this.loadBoardLists(board.id);
-  this.boardService.trackBoardAccess(board.id).subscribe({
-    next: () => this.loadRecentBoards()
-  });
-}
 
-clearSelectedBoard(): void {
-  this.selectedBoardId.set(null);
-  this.selectedListId.set(null);
-  this.boardLists.set([]);
-}
+  private loadBoardsForWorkspace(workspaceId: string | number): void {
+    this.boardsLoading.set(true);
+    this.boardsError.set('');
+    this.boardService.getBoardsByWorkspace(String(workspaceId)).subscribe({
+      next: (boards) => {
+        this.workspaceBoards.set(boards);
+        this.boardsLoading.set(false);
+        if (boards.length > 0) {
+          this.selectedBoardId.set(boards[0].id);
+          this.loadBoardLists(boards[0].id);
+        } else {
+          this.clearSelectedBoard();
+        }
+      },
+      error: () => {
+        this.boardsLoading.set(false);
+        const message = 'Failed to load boards.';
+        this.boardsError.set(message);
+        this.toast.show(message, 'error');
+      }
+    });
+  }
 
-getSelectedListName(): string {
-  const list = this.boardLists().find(l => l.id === this.selectedListId());
-  return list?.name || '';
-}
+  selectBoard(board: Board): void {
+    if (this.selectedBoardId() === board.id) {
+      this.clearSelectedBoard();
+      return;
+    }
+    this.selectedBoardId.set(board.id);
+    this.selectedListId.set(null);
+    this.loadBoardLists(board.id);
+    // Background access tracker — failure shouldn't interrupt the user, no toast.
+    this.boardService.trackBoardAccess(board.id).subscribe({
+      next: () => this.loadRecentBoards(),
+      error: () => {}
+    });
+  }
 
-private loadBoardLists(boardId: string | number): void {
-  this.listsLoading.set(true);
-  this.boardLists.set([]);
-  this.selectedListId.set(null);
+  clearSelectedBoard(): void {
+    this.selectedBoardId.set(null);
+    this.selectedListId.set(null);
+    this.boardLists.set([]);
+  }
 
-  this.listService.getLists(String(boardId)).subscribe({
-    next: (lists) => {
-      const normalized = Array.isArray(lists)
-        ? lists.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-        : [];
+  getSelectedListName(): string {
+    const list = this.boardLists().find(l => l.id === this.selectedListId());
+    return list?.name || '';
+  }
 
-      if (!normalized.length) {
+  private loadBoardLists(boardId: string | number): void {
+    this.listsLoading.set(true);
+    this.boardLists.set([]);
+    this.selectedListId.set(null);
+
+    this.listService.getLists(String(boardId)).subscribe({
+      next: (lists) => {
+        const normalized = Array.isArray(lists)
+          ? lists.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          : [];
+
+        if (!normalized.length) {
+          this.boardLists.set([]);
+          this.listsLoading.set(false);
+          return;
+        }
+
+        forkJoin(normalized.map(list => this.cardService.getCards(list.id))).subscribe({
+          next: (cardsByIndex) => {
+            const merged = normalized.map((list, idx) => ({ ...list, cards: cardsByIndex[idx] || [] }));
+            this.boardLists.set(merged);
+            this.selectedListId.set(merged[0].id);
+            this.listsLoading.set(false);
+          },
+          error: () => {
+            const fallback = normalized.map(l => ({ ...l, cards: [] }));
+            this.boardLists.set(fallback);
+            this.selectedListId.set(fallback[0].id);
+            this.listsLoading.set(false);
+            this.toast.show('Failed to load cards for this board.', 'error');
+          }
+        });
+      },
+      error: () => {
         this.boardLists.set([]);
         this.listsLoading.set(false);
-        return;
+        this.toast.show('Failed to load lists for this board.', 'error');
       }
+    });
+  }
 
-      forkJoin(normalized.map(list => this.cardService.getCards(list.id))).subscribe({
-        next: (cardsByIndex) => {
-          const merged = normalized.map((list, idx) => ({ ...list, cards: cardsByIndex[idx] || [] }));
-          this.boardLists.set(merged);
-          this.selectedListId.set(merged[0].id);
-          this.listsLoading.set(false);
-        },
-        error: () => {
-          const fallback = normalized.map(l => ({ ...l, cards: [] }));
-          this.boardLists.set(fallback);
-          this.selectedListId.set(fallback[0].id);
-          this.listsLoading.set(false);
-        }
-      });
-    },
-    error: () => {
-      this.boardLists.set([]);
-      this.listsLoading.set(false);
-    }
-  });
-}
+  openBoardFromDetail(board: Board): void {
+    this.router.navigate(['/workspaces', board.workSpaceId, 'boards', board.id]);
+  }
 
-openBoardFromDetail(board: Board): void {
-  this.router.navigate(['/workspaces', board.workSpaceId, 'boards', board.id]);
-}
-
-getMemberRole(member: any): string {
-  const role = member?.role || member?.workspaceRole;
-  return role ? this.formatRole(role) : 'Member';
-}
+  getMemberRole(member: any): string {
+    const role = member?.role || member?.workspaceRole;
+    return role ? this.formatRole(role) : 'Member';
+  }
 
   openWorkspace(id: string | number): void {
     this.activeWorkspaceId.set(id); // Set active workspace state
@@ -516,9 +549,12 @@ getMemberRole(member: any): string {
         if (!targetBoard) return;
 
         this.selectedBoardId.set(targetBoard.id);
-        this.loadBoardListsAndHighlight(targetBoard.id); 
+        this.loadBoardListsAndHighlight(targetBoard.id);
       },
-      error: () => this.boardsLoading.set(false)
+      error: () => {
+        this.boardsLoading.set(false);
+        this.toast.show('Failed to open that board.', 'error');
+      }
     });
   }
 
@@ -527,8 +563,15 @@ getMemberRole(member: any): string {
     const previous = ws.isStarred;
     ws.isStarred = !previous;
     this.workspaceService.starWorkspace(String(ws.id)).subscribe({
-      next: (res) => { ws.isStarred = res.starred; this.loadStarredWorkspaces(); },
-      error: () => { ws.isStarred = previous; }
+      next: (res) => {
+        ws.isStarred = res.starred;
+        this.loadStarredWorkspaces();
+        this.toast.show(res.starred ? 'Workspace starred.' : 'Workspace unstarred.', 'success');
+      },
+      error: (err: { error?: { message?: string } }) => {
+        ws.isStarred = previous;
+        this.toast.show(err?.error?.message || 'Failed to update star. Please try again.', 'error');
+      }
     });
   }
 
@@ -576,10 +619,13 @@ getMemberRole(member: any): string {
         );
         this.savingWorkspaceEdit.set(false);
         this.closeEditWorkspaceModal();
+        this.toast.show('Workspace updated.', 'success');
       },
       error: (err: { error?: { message?: string } }) => {
         this.savingWorkspaceEdit.set(false);
-        this.editWorkspaceError.set(err?.error?.message || 'Failed to update workspace. Please try again.');
+        const message = err?.error?.message || 'Failed to update workspace. Please try again.';
+        this.editWorkspaceError.set(message);
+        this.toast.show(message, 'error');
       }
     });
   }
@@ -587,7 +633,6 @@ getMemberRole(member: any): string {
   leaveWorkspace(ws: Workspace, event: Event): void {
     event.stopPropagation();
     this.cardMenuOpenId.set(null);
-    this.leaveWorkspaceError.set('');
 
     this.workspaceService.leaveWorkspace(ws.id).subscribe({
       next: () => {
@@ -598,10 +643,10 @@ getMemberRole(member: any): string {
           this.workspaceBoards.set([]);
           this.clearSelectedBoard();
         }
+        this.toast.show('You left the workspace.', 'success');
       },
       error: (err: { error?: { message?: string } }) => {
-        this.leaveWorkspaceError.set(err?.error?.message || 'Failed to leave workspace. Please try again.');
-        setTimeout(() => this.leaveWorkspaceError.set(''), 4000);
+        this.toast.show(err?.error?.message || 'Failed to leave workspace. Please try again.', 'error');
       }
     });
   }
@@ -704,8 +749,8 @@ getMemberRole(member: any): string {
   }
 
   openNotifications(): void {
-  // TODO: wire this up once there's a notifications endpoint/panel.
-}
+    // TODO: wire this up once there's a notifications endpoint/panel.
+  }
 
   inviteToWorkspace(ws: Workspace, event: Event): void {
     event.stopPropagation();
@@ -761,53 +806,59 @@ getMemberRole(member: any): string {
         this.creating.set(false);
         this.justCreatedWorkspace.set(workspace);
         this.modalStep.set('invite');
+        this.toast.show(`Workspace "${workspace.workSpaceName}" created.`, 'success');
       },
-      error: () => {
+      error: (err: { error?: { message?: string } }) => {
         this.creating.set(false);
-        this.error.set('Failed to create workspace. Please try again.');
+        const message = err?.error?.message || 'Failed to create workspace. Please try again.';
+        this.error.set(message);
+        this.toast.show(message, 'error');
       }
     });
   }
 
   openCreateBoardModal(): void {
-  this.newBoardTitle = '';
-  this.newBoardDescription = '';
-  this.createBoardError.set('');
-  this.showCreateBoardModal.set(true);
-}
+    this.newBoardTitle = '';
+    this.newBoardDescription = '';
+    this.createBoardError.set('');
+    this.showCreateBoardModal.set(true);
+  }
 
-closeCreateBoardModal(): void {
-  this.showCreateBoardModal.set(false);
-  this.newBoardTitle = '';
-  this.newBoardDescription = '';
-  this.createBoardError.set('');
-}
+  closeCreateBoardModal(): void {
+    this.showCreateBoardModal.set(false);
+    this.newBoardTitle = '';
+    this.newBoardDescription = '';
+    this.createBoardError.set('');
+  }
 
-createBoardInline(): void {
-  const ws = this.selectedWorkspace();
-  if (!ws || !this.newBoardTitle.trim()) return;
+  createBoardInline(): void {
+    const ws = this.selectedWorkspace();
+    if (!ws || !this.newBoardTitle.trim()) return;
 
-  this.creatingBoard.set(true);
-  this.createBoardError.set('');
+    this.creatingBoard.set(true);
+    this.createBoardError.set('');
 
-  const request: CreateBoardRequest = {
-    boardName: this.newBoardTitle.trim(),
-    boardDescription: this.newBoardDescription.trim() || undefined,
-    workSpaceId: ws.id
-  };
+    const request: CreateBoardRequest = {
+      boardName: this.newBoardTitle.trim(),
+      boardDescription: this.newBoardDescription.trim() || undefined,
+      workSpaceId: ws.id
+    };
 
-  this.boardService.createBoard(request).subscribe({
-    next: (board) => {
-      this.workspaceBoards.update(list => [board, ...list]);
-      this.creatingBoard.set(false);
-      this.closeCreateBoardModal();
-    },
-    error: () => {
-      this.creatingBoard.set(false);
-      this.createBoardError.set('Failed to create board. Please try again.');
-    }
-  });
-}
+    this.boardService.createBoard(request).subscribe({
+      next: (board) => {
+        this.workspaceBoards.update(list => [board, ...list]);
+        this.creatingBoard.set(false);
+        this.closeCreateBoardModal();
+        this.toast.show(`Board "${board.boardName}" created.`, 'success');
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.creatingBoard.set(false);
+        const message = err?.error?.message || 'Failed to create board. Please try again.';
+        this.createBoardError.set(message);
+        this.toast.show(message, 'error');
+      }
+    });
+  }
 
   // ─── Invite Members ───────────────────────────────────────────────────────
 
@@ -838,11 +889,14 @@ createBoardInline(): void {
         this.inviteSuccess.set(`Invite sent to ${email}`);
         this.inviteEmail = '';
         this.sending.set(false);
+        this.toast.show(`Invite sent to ${email}.`, 'success');
         setTimeout(() => this.inviteSuccess.set(''), 3000);
       },
       error: (err: { error?: { message?: string } }) => {
         this.sending.set(false);
-        this.inviteError.set(err?.error?.message || 'Failed to send invite. Please try again.');
+        const message = err?.error?.message || 'Failed to send invite. Please try again.';
+        this.inviteError.set(message);
+        this.toast.show(message, 'error');
       }
     });
   }
@@ -884,63 +938,70 @@ createBoardInline(): void {
   }
 
   toggleReassignPicker(card: Card, event: Event): void {
-  event.stopPropagation();
+    event.stopPropagation();
 
-  if (this.reassigningCardId() === card.id) {
-    this.reassigningCardId.set(null);
-    return;
+    if (this.reassigningCardId() === card.id) {
+      this.reassigningCardId.set(null);
+      return;
+    }
+
+    this.reassigningCardId.set(card.id);
+
+    const boardId = this.selectedBoardId();
+    if (boardId != null) {
+      this.boardMemberService.getMembers(boardId).subscribe({
+        next: (members) => this.panelBoardMembers.set(members),
+        error: () => {
+          this.panelBoardMembers.set([]);
+          this.toast.show('Failed to load board members.', 'error');
+        }
+      });
+    }
   }
 
-  this.reassigningCardId.set(card.id);
+  reassignFromPanel(card: Card, member: BoardMemberSummary, event: Event): void {
+    event.stopPropagation();
+    if (this.isReassigningInPanel()) return;
 
-  const boardId = this.selectedBoardId();
-  if (boardId != null) {
-    this.boardMemberService.getMembers(boardId).subscribe({
-      next: (members) => this.panelBoardMembers.set(members),
-      error: () => this.panelBoardMembers.set([])
+    this.isReassigningInPanel.set(true);
+
+    this.cardService.reassignCard(card.id, member.userId).subscribe({
+      next: (updated) => {
+        this.boardLists.update(lists =>
+          lists.map(list => ({
+            ...list,
+            cards: (list.cards || []).map(c =>
+              c.id === card.id ? { ...c, assigneeId: updated.assigneeId, assigneeName: updated.assigneeName } : c
+            )
+          }))
+        );
+        this.isReassigningInPanel.set(false);
+        this.reassigningCardId.set(null);
+        this.toast.show(`Card assigned to ${updated.assigneeName || member.userFullName}.`, 'success');
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.isReassigningInPanel.set(false);
+        this.toast.show(err?.error?.message || 'Failed to reassign card. Please try again.', 'error');
+      }
     });
   }
-}
-
-reassignFromPanel(card: Card, member: BoardMemberSummary, event: Event): void {
-  event.stopPropagation();
-  if (this.isReassigningInPanel()) return;
-
-  this.isReassigningInPanel.set(true);
-
-  this.cardService.reassignCard(card.id, member.userId).subscribe({
-    next: (updated) => {
-      this.boardLists.update(lists =>
-        lists.map(list => ({
-          ...list,
-          cards: (list.cards || []).map(c =>
-            c.id === card.id ? { ...c, assigneeId: updated.assigneeId, assigneeName: updated.assigneeName } : c
-          )
-        }))
-      );
-      this.isReassigningInPanel.set(false);
-      this.reassigningCardId.set(null);
-    },
-    error: () => this.isReassigningInPanel.set(false)
-  });
-}
 
   getBoardsMemberSummary(): string {
-  const total = this.workspaceBoards().reduce((sum, b) => sum + (b.members?.length ?? 0), 1);
-  return total > 0 + 1 ? `${total} member${total !== 1 ? 's' : ''} across boards` : 'In this workspace';
-}
+    const total = this.workspaceBoards().reduce((sum, b) => sum + (b.members?.length ?? 0), 1);
+    return total > 0 + 1 ? `${total} member${total !== 1 ? 's' : ''} across boards` : 'In this workspace';
+  }
 
-getBoardsLastActivitySummary(): string {
-  const dates = this.workspaceBoards()
-    .map(b => (b as any).boardCreatedAt)
-    .filter(Boolean)
-    .map(raw => new Date(raw))
-    .filter(d => !isNaN(d.getTime()));
+  getBoardsLastActivitySummary(): string {
+    const dates = this.workspaceBoards()
+      .map(b => (b as any).boardCreatedAt)
+      .filter(Boolean)
+      .map(raw => new Date(raw))
+      .filter(d => !isNaN(d.getTime()));
 
-  if (!dates.length) return '';
-  const latest = new Date(Math.max(...dates.map(d => d.getTime())));
-  return `Latest ${this.timeAgo(latest)}`;
-}
+    if (!dates.length) return '';
+    const latest = new Date(Math.max(...dates.map(d => d.getTime())));
+    return `Latest ${this.timeAgo(latest)}`;
+  }
 
   getInitial(name: string): string {
     return name.charAt(0).toUpperCase();
@@ -955,37 +1016,48 @@ getBoardsLastActivitySummary(): string {
   }
 
   loadMyInvitations(): void {
-  this.workspaceService.getMyInvitations().subscribe({
-    next: (invites) => this.pendingInvites.set(invites),
-    error: () => this.pendingInvites.set([])
-  });
-}
+    this.workspaceService.getMyInvitations().subscribe({
+      next: (invites) => this.pendingInvites.set(invites),
+      error: () => {
+        this.pendingInvites.set([]);
+        this.toast.show('Failed to load pending invitations.', 'error');
+      }
+    });
+  }
 
-openInvitesTab(): void {
-  this.activeQuickTab.set('invites');
-  this.loadMyInvitations();
-}
+  openInvitesTab(): void {
+    this.activeQuickTab.set('invites');
+    this.loadMyInvitations();
+  }
 
   // --- Workspace Invitation Handlers ---
   acceptInvitation(token: string): void {
-  this.workspaceService.acceptInvite(token).subscribe({
-    next: () => {
-      this.pendingInvites.update(list => list.filter(i => i.token !== token));
-      this.loadWorkspaces();
-    },
-    error: () => {}
-  });
-}
+    this.workspaceService.acceptInvite(token).subscribe({
+      next: () => {
+        this.pendingInvites.update(list => list.filter(i => i.token !== token));
+        this.loadWorkspaces();
+        this.toast.show('Invitation accepted.', 'success');
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.toast.show(err?.error?.message || 'Failed to accept invitation. Please try again.', 'error');
+      }
+    });
+  }
 
   // Rename 'rejectInvite' to 'rejectInvitation'
-rejectInvitation(token: string): void {
-  this.workspaceService.rejectInvitation(token).subscribe({
-    next: () => this.pendingInvites.update(list => list.filter(i => i.token !== token)),
-    error: () => {}
-  });
-}
+  rejectInvitation(token: string): void {
+    this.workspaceService.rejectInvitation(token).subscribe({
+      next: () => {
+        this.pendingInvites.update(list => list.filter(i => i.token !== token));
+        this.toast.show('Invitation declined.', 'success');
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.toast.show(err?.error?.message || 'Failed to decline invitation. Please try again.', 'error');
+      }
+    });
+  }
 
-openRecentActivity(recent: RecentBoardSummary): void {
+  openRecentActivity(recent: RecentBoardSummary): void {
     this.workspaces.update(list => {
       const idx = list.findIndex(ws => ws.id === recent.workspaceId);
       if (idx <= 0) return list;
@@ -1008,7 +1080,10 @@ openRecentActivity(recent: RecentBoardSummary): void {
         this.selectedBoardId.set(targetBoard.id);
         this.loadBoardListsAndHighlight(targetBoard.id, recent.listId, recent.cardId);
       },
-      error: () => this.boardsLoading.set(false)
+      error: () => {
+        this.boardsLoading.set(false);
+        this.toast.show('Failed to open that board.', 'error');
+      }
     });
   }
 
@@ -1042,10 +1117,16 @@ openRecentActivity(recent: RecentBoardSummary): void {
 
             this.listsLoading.set(false);
           },
-          error: () => this.listsLoading.set(false)
+          error: () => {
+            this.listsLoading.set(false);
+            this.toast.show('Failed to load cards for this board.', 'error');
+          }
         });
       },
-      error: () => this.listsLoading.set(false)
+      error: () => {
+        this.listsLoading.set(false);
+        this.toast.show('Failed to load lists for this board.', 'error');
+      }
     });
   }
 }

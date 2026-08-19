@@ -31,6 +31,70 @@
   outline-offset: 2px;
 }
 
+.toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 360px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  line-height: 1.4;
+  animation: toast-in 0.2s ease-out;
+}
+
+.toast--error {
+  background: #fdecea;
+  color: #7a1f16;
+  border: 1px solid #f3c2bc;
+}
+
+.toast-icon {
+  flex-shrink: 0;
+}
+
+.toast-text {
+  flex: 1;
+}
+
+.toast--success {
+  background: #eafaf0;
+  color: #14532d;
+  border: 1px solid #b7e4c7;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .nav-left {
   display: flex;
   align-items: center;
@@ -258,6 +322,13 @@
   font-size: 0.95rem;
   opacity: 0;
   transition: opacity 0.2s, transform 0.15s;
+}
+
+.detail-heading-meta {
+  display: block;
+  font-size: 13px;
+  color: #6b778c;
+  margin-top: 2px;
 }
 
 .board-card:hover .btn-star { opacity: 1; }
@@ -612,6 +683,44 @@
   text-overflow: ellipsis;
 }
 
+.assigned-cards-modal {
+  max-width: 480px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.assigned-group {
+  margin-bottom: 20px;
+}
+
+.assigned-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5e6c84;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+
+.assigned-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.assigned-card-row:hover {
+  background: #f4f5f7;
+}
+
+.assigned-card-row .card-title {
+  flex: 1;
+  font-size: 14px;
+}
+
 .card-count {
   font-family: var(--font-mono);
   font-size: 0.66rem;
@@ -793,6 +902,31 @@
 
 .btn-cancel-inline:hover { background: var(--paper); color: var(--ink); }
 
+.btn-delete-confirm {
+  background: #C5364C;
+  color: var(--surface);
+  border: none;
+  padding: 0.7rem 1.3rem;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.18s;
+}
+
+.btn-delete-confirm:hover:not(:disabled) {
+  background: #A82B3E;
+  transform: translateY(-1px);
+}
+
+.btn-delete-confirm:disabled {
+  background: var(--line);
+  color: #A8AFBC;
+  cursor: not-allowed;
+  transform: none;
+}
+
 
 /* ═══ Split layout ═══ */
 
@@ -914,6 +1048,8 @@
 }
 
 .detail-heading {
+  display: flex;
+  flex-direction: column;
   position: relative;
   min-width: 0;
 }
@@ -923,22 +1059,6 @@
   align-items: center;
   gap: 0.35rem;
 }
-
-.btn-members-toggle {
-  background: none;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 0.9rem;
-  line-height: 1;
-  padding: 0.15rem 0.3rem;
-  border-radius: 5px;
-  flex-shrink: 0;
-  transition: transform 0.15s, background 0.15s, color 0.15s;
-}
-
-.btn-members-toggle:hover { background: var(--paper); color: var(--ink); }
-.btn-members-toggle--open { transform: rotate(180deg); }
 
 .members-dropdown-backdrop {
   position: fixed;
@@ -1987,4 +2107,112 @@ select.form-input {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+/* ═══ Star + kebab menu (mirrors workspace card exactly) ═══ */
+
+.wc-star {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--line);
+  cursor: pointer;
+  padding: 2px;
+  flex-shrink: 0;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.wc-star:hover { color: var(--amber); transform: scale(1.1); }
+.wc-star--active { color: var(--amber); }
+
+.wc-menu-wrap { position: relative; flex-shrink: 0; }
+
+.wc-kebab {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.wc-kebab:hover { background: var(--paper); color: var(--ink); }
+
+.wc-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 249;
+  background: transparent;
+}
+
+.wc-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 190px;
+  max-width: calc(100vw - 2rem);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 20px 40px -16px rgba(18, 33, 59, 0.32);
+  z-index: 250;
+  padding: 0.35rem;
+}
+
+/* edit-board-dropdown already has width:280px defined elsewhere in this file
+   for the edit/leave/delete form views — this keeps that override winning
+   over the base .wc-menu width */
+.wc-menu.edit-board-dropdown { width: 280px; }
+
+.wc-menu-item {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.5rem 0.55rem;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.13s;
+}
+
+.wc-menu-item:hover { background: var(--paper); }
+.wc-menu-item--danger { color: #C5364C; }
+
+.wc-menu-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 0.3rem 0.2rem;
+}
+
+.members-dd-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  font-size: 0.68rem;
+  line-height: 1;
+  color: var(--muted);
+  margin-left: 0.4rem;
+  flex-shrink: 0;
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.btn-manage-members--active .members-dd-chevron {
+  transform: rotate(180deg);
+  border-color: var(--accent);
+  background: rgba(79, 70, 229, 0.06);
 }

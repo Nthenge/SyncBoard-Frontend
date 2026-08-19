@@ -1,0 +1,10 @@
+<div class="toast-stack" *ngIf="toast.message()">
+  <div class="toast"
+       [class.toast--error]="toast.type() === 'error'"
+       [class.toast--success]="toast.type() === 'success'"
+       role="alert">
+    <span class="toast-icon">{{ toast.type() === 'success' ? '✓' : '⚠' }}</span>
+    <span class="toast-text">{{ toast.message() }}</span>
+    <button class="toast-close" (click)="toast.dismiss()" aria-label="Dismiss">×</button>
+  </div>
+</div>

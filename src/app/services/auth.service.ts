@@ -165,8 +165,26 @@ export class AuthService {
     }
 
     logout(): void {
+        const token = this.getAccessToken();
+
+        if (!token) {
+            this.finishLogout();
+            return;
+        }
+
+        this.http.put(
+            `${environment.apiUrl}${environment.api?.basePath ?? ''}/user/logout`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+        ).subscribe({
+            next: () => this.finishLogout(),
+            error: () => this.finishLogout()
+        });
+    }
+
+    private finishLogout(): void {
         this.clearAllAuthData();
-        this.router.navigate(['/login']);
+        this.router.navigate(['/']);
     }
 
     verifyEmail(token: string): Promise<boolean> {

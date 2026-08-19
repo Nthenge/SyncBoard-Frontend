@@ -1,5 +1,13 @@
 <div class="boards-container">
 
+  <div class="toast-stack" *ngIf="toastMessage()">
+    <div class="toast" [class.toast--error]="toastType() === 'error'" [class.toast--success]="toastType() === 'success'" role="alert">
+      <span class="toast-icon">{{ toastType() === 'success' ? '✓' : '⚠' }}</span>
+      <span class="toast-text">{{ toastMessage() }}</span>
+      <button class="toast-close" (click)="dismissToast()" aria-label="Dismiss">×</button>
+    </div>
+  </div>
+
   <aside class="ws-sidebar">
 
     <div class="sidebar-top-group">
@@ -69,12 +77,11 @@
           <div class="board-list-info">
             <span class="board-list-name">{{ board.boardName }}</span>
             <span class="board-list-meta">
-              {{ (board.members || []).length }} member{{ (board.members || []).length !== 1 ? 's' : '' }}
+              {{ getBoardMemberCount(board) }} member{{ getBoardMemberCount(board) !== 1 ? 's' : '' }}
             </span>
           </div>
-          <button class="btn-star" (click)="toggleStar(board, $event)" [class.starred]="board.isStarred">
-            {{ board.isStarred ? '⭐' : '☆' }}
-          </button>
+          <button class="wc-star" [class.wc-star--active]="board.isStarred" (click)="toggleStar(board, $event)"
+            [attr.aria-label]="board.isStarred ? 'Unstar board' : 'Star board'">{{ board.isStarred ? '★' : '☆' }}</button>
         </div>
       </div>
 
@@ -95,16 +102,20 @@
         <span class="sidebar-section-label">Quick actions</span>
       </div>
 
-      <div class="quick-list">
-        <button class="quick-item" (click)="showCreateModal.set(true)">
-          <span class="qi-icon">➕</span>
-          <span class="qi-text">Create board</span>
-        </button>
-        <button class="quick-item" (click)="openInviteModal()">
-          <span class="qi-icon">👥</span>
-          <span class="qi-text">Invite member</span>
-        </button>
-      </div>
+        <div class="quick-list">
+          <button class="quick-item" (click)="showCreateModal.set(true)">
+            <span class="qi-icon">➕</span>
+            <span class="qi-text">Create board</span>
+          </button>
+          <button class="quick-item" (click)="openInviteModal()">
+            <span class="qi-icon">👥</span>
+            <span class="qi-text">Invite member</span>
+          </button>
+          <button class="quick-item" (click)="openAssignedCardsModal()">
+            <span class="qi-icon">📋</span>
+            <span class="qi-text">My assigned cards</span>
+          </button>
+        </div>
     </div>
 
   </aside>
@@ -127,92 +138,36 @@
 
         <div class="detail-header">
         <div class="detail-heading-group">
-          <div class="detail-avatar">{{ getInitial(sb.boardName) }}</div>
+  <div class="detail-avatar">{{ getInitial(sb.boardName) }}</div>
 
-          <div class="detail-heading">
-            <div class="detail-heading-row">
-              <h2>{{ sb.boardName }}</h2>
-              <button
-                class="btn-members-toggle"
-                [class.btn-members-toggle--open]="showEditBoardDropdown()"
-                (click)="toggleEditBoardDropdown($event)"
-                title="Edit board"
-              >⌄</button>
-            </div>
+  <div class="detail-heading">
+    <div class="detail-heading-row">
+      <h2>{{ sb.boardName }}</h2>
 
-            <div class="members-dropdown-backdrop" *ngIf="showEditBoardDropdown()" (click)="closeEditBoardDropdown()"></div>
+      <button class="wc-star" [class.wc-star--active]="sb.isStarred" (click)="toggleStar(sb, $event)"
+        [attr.aria-label]="sb.isStarred ? 'Unstar board' : 'Star board'">{{ sb.isStarred ? '★' : '☆' }}</button>
 
-            <div class="members-dropdown edit-board-dropdown" *ngIf="showEditBoardDropdown()" (click)="$event.stopPropagation()">
+        <div class="wc-menu-wrap">
+        <button class="wc-kebab" (click)="toggleEditBoardDropdown($event)" aria-label="Board options">⋯</button>
 
-  <!-- VIEW 1: menu -->
-  <ng-container *ngIf="boardMenuView() === 'menu'">
-    <div class="members-dropdown-header">
-      <span class="detail-section-label">Board options</span>
-    </div>
-    <div class="account-menu-section">
-      <button class="account-menu-item" (click)="boardMenuView.set('edit')">
-        <span class="ami-icon">✏️</span> Edit board
-      </button>
-      <button class="account-menu-item" (click)="openInviteFromBoardMenu()">
-        <span class="ami-icon">👥</span> Invite members
-      </button>
-      <button class="account-menu-item account-menu-item--danger" (click)="boardMenuView.set('leave')">
-        <span class="ami-icon">🚪</span> Leave board
-      </button>
-    </div>
-  </ng-container>
+        <div class="wc-menu-backdrop" *ngIf="showEditBoardDropdown()" (click)="closeEditBoardDropdown()"></div>
 
-  <!-- VIEW 2: edit form -->
-  <ng-container *ngIf="boardMenuView() === 'edit'">
-    <div class="members-dropdown-header">
-      <button class="btn-icon" (click)="boardMenuView.set('menu')" title="Back">←</button>
-      <span class="detail-section-label">Edit board</span>
-    </div>
-
-    <div class="form-group">
-      <label>Board name</label>
-      <input type="text" class="form-input" [(ngModel)]="editBoardName" (keyup.enter)="saveBoardEdit()" autofocus>
-    </div>
-
-    <div class="form-group">
-      <label>Description <span class="optional">(optional)</span></label>
-      <input type="text" class="form-input" [(ngModel)]="editBoardDescription" (keyup.enter)="saveBoardEdit()">
-    </div>
-
-    <p class="list-error-msg" *ngIf="editBoardError()">{{ editBoardError() }}</p>
-
-    <div class="edit-board-actions">
-      <button class="btn-cancel" (click)="boardMenuView.set('menu')">Cancel</button>
-      <button class="btn-create" (click)="saveBoardEdit()" [disabled]="!editBoardName.trim() || savingBoardEdit()">
-        {{ savingBoardEdit() ? 'Saving…' : 'Save' }}
-      </button>
-    </div>
-  </ng-container>
-
-  <!-- VIEW 3: leave confirm -->
-  <ng-container *ngIf="boardMenuView() === 'leave'">
-    <div class="members-dropdown-header">
-      <button class="btn-icon" (click)="boardMenuView.set('menu')" title="Back">←</button>
-      <span class="detail-section-label">Leave board</span>
-    </div>
-
-    <p class="detail-empty-hint">
-      Are you sure you want to leave "{{ selectedBoard()?.boardName }}"? If you're the only admin, the board will be deleted for everyone.
-    </p>
-
-    <p class="list-error-msg" *ngIf="leaveBoardError()">{{ leaveBoardError() }}</p>
-
-    <div class="edit-board-actions">
-      <button class="btn-cancel" (click)="boardMenuView.set('menu')">Cancel</button>
-      <button class="btn-delete-confirm" (click)="confirmLeaveBoard()" [disabled]="leavingBoard()">
-        {{ leavingBoard() ? 'Leaving…' : 'Yes, leave' }}
-      </button>
-    </div>
-  </ng-container>
-
-</div>
-          </div>
+        <div class="wc-menu" *ngIf="showEditBoardDropdown()" (click)="$event.stopPropagation()">
+          <button class="wc-menu-item" *ngIf="isBoardAdmin()" (click)="openEditBoardModal()">Edit board</button>
+          <button class="wc-menu-item" *ngIf="isBoardAdmin()" (click)="openInviteFromBoardMenu()">Invite members</button>
+          <div class="wc-menu-divider" *ngIf="isBoardAdmin()"></div>
+          <button class="wc-menu-item wc-menu-item--danger" (click)="openLeaveBoardModal()">Leave board</button>
+          <button class="wc-menu-item wc-menu-item--danger" *ngIf="isBoardAdmin()" (click)="openDeleteBoardModal()">Delete board</button>
         </div>
+      </div>
+    </div>
+    <!-- ↑ this closes detail-heading-row -->
+
+    <span class="detail-heading-meta" *ngIf="sb.boardCreatedBy">
+      Created by {{ sb.boardCreatedBy }}
+    </span>
+  </div>
+</div>
 
   <div class="board-actions-group">
     <div class="manage-members-wrap">
@@ -222,6 +177,7 @@
         (click)="toggleMembersDropdown($event)"
       >
         Manage Members
+        <span class="members-dd-chevron">⌄</span>
       </button>
 
       <div class="members-dropdown-backdrop" *ngIf="showMembersDropdown()" (click)="closeMembersDropdown()"></div>
@@ -386,11 +342,6 @@
           </p>
         </div>
 
-        <div class="ws-detail-footer">
-          <span class="member-count">{{ getPanelMemberSummary() }}</span>
-          <span class="member-count">{{ getPanelListSummary() }}</span>
-        </div>
-
       </aside>
 
       <ng-template #noBoardSelected>
@@ -528,6 +479,111 @@
         <button class="btn-create" (click)="submitCreateCard()" [disabled]="!newCardTitle.trim() || creatingCardModal()">
           {{ creatingCardModal() ? 'Creating...' : 'Create Card' }}
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Board Modal -->
+<div class="modal-overlay" *ngIf="showEditBoardModal()" (click)="closeEditBoardModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Edit board</h2>
+      <button class="btn-close" (click)="closeEditBoardModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Board name</label>
+        <input type="text" class="form-input" [(ngModel)]="editBoardName" (keyup.enter)="saveBoardEdit()" autofocus>
+      </div>
+      <div class="form-group">
+        <label>Description <span class="optional">(optional)</span></label>
+        <input type="text" class="form-input" [(ngModel)]="editBoardDescription" (keyup.enter)="saveBoardEdit()">
+      </div>
+      <div class="error-message" *ngIf="editBoardError()">{{ editBoardError() }}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeEditBoardModal()">Cancel</button>
+      <button class="btn-create" (click)="saveBoardEdit()" [disabled]="!editBoardName.trim() || savingBoardEdit()">
+        {{ savingBoardEdit() ? 'Saving…' : 'Save changes' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Leave Board Modal -->
+<div class="modal-overlay" *ngIf="showLeaveBoardModal()" (click)="closeLeaveBoardModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Leave board</h2>
+      <button class="btn-close" (click)="closeLeaveBoardModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="invite-description">
+        Are you sure you want to leave "{{ selectedBoard()?.boardName }}"? If you're the only admin, the board will be deleted for everyone.
+      </p>
+      <div class="error-message" *ngIf="leaveBoardError()">{{ leaveBoardError() }}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeLeaveBoardModal()">Cancel</button>
+      <button class="btn-delete-confirm" (click)="confirmLeaveBoard()" [disabled]="leavingBoard()">
+        {{ leavingBoard() ? 'Leaving…' : 'Yes, leave' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Board Modal (admin only) -->
+<div class="modal-overlay" *ngIf="showDeleteBoardModal()" (click)="closeDeleteBoardModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Delete board</h2>
+      <button class="btn-close" (click)="closeDeleteBoardModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="invite-description">
+        Are you sure you want to delete "{{ selectedBoard()?.boardName }}"? This permanently removes the board, its lists, and its cards for everyone.
+      </p>
+      <div class="error-message" *ngIf="deleteBoardError()">{{ deleteBoardError() }}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeDeleteBoardModal()">Cancel</button>
+      <button class="btn-delete-confirm" (click)="confirmDeleteBoard()" [disabled]="deletingBoard()">
+        {{ deletingBoard() ? 'Deleting…' : 'Yes, delete' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+  <!-- My Assigned Cards Modal -->
+  <div class="modal-overlay" *ngIf="showAssignedCardsModal()" (click)="closeAssignedCardsModal()">
+    <div class="modal-content assigned-cards-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>My assigned cards</h2>
+        <button class="btn-close" (click)="closeAssignedCardsModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="lists-loading" *ngIf="assignedCardsLoading()">
+          <div class="spinner spinner--sm"></div>
+        </div>
+
+        <div class="error-message" *ngIf="assignedCardsError()">{{ assignedCardsError() }}</div>
+
+        <div class="assigned-groups" *ngIf="!assignedCardsLoading() && !assignedCardsError()">
+          <div class="assigned-group" *ngFor="let group of groupedAssignedCards()">
+            <h3 class="assigned-group-title">{{ group.boardName }}</h3>
+            <div class="assigned-card-row" *ngFor="let card of group.cards" (click)="goToAssignedCard(card)">
+              <span class="card-title">{{ card.cardTitle }}</span>
+              <span class="card-priority" *ngIf="card.priority" [class]="'card-priority--' + card.priority.toLowerCase()">
+                {{ card.priority }}
+              </span>
+              <span class="card-due" *ngIf="card.dueDate">📅 {{ card.dueDate | date:'mediumDate' }}</span>
+            </div>
+          </div>
+
+          <p class="detail-empty-hint" *ngIf="assignedCards().length === 0">
+            No cards assigned to you right now.
+          </p>
+        </div>
       </div>
     </div>
   </div>
