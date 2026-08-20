@@ -149,14 +149,20 @@ export class WorkspacesComponent implements OnInit {
     });
 
     this.activeWorkspaceId.set(task.workspaceId);
+    this.sidebarMenuOpen.set(false);
 
     this.boardsLoading.set(true);
     this.boardService.getBoardsByWorkspace(String(task.workspaceId)).subscribe({
       next: (boards) => {
-        this.workspaceBoards.set(boards);
+        const targetBoard = boards.find(b => b.id === task.boardId);
+
+        const ordered = targetBoard
+          ? [targetBoard, ...boards.filter(b => b.id !== task.boardId)]
+          : boards;
+
+        this.workspaceBoards.set(ordered);
         this.boardsLoading.set(false);
 
-        const targetBoard = boards.find(b => b.id === task.boardId);
         if (!targetBoard) return;
 
         this.selectedBoardId.set(targetBoard.id);
@@ -456,6 +462,16 @@ export class WorkspacesComponent implements OnInit {
     this.selectedBoardId.set(board.id);
     this.selectedListId.set(null);
     this.loadBoardLists(board.id);
+
+    // Move clicked board to position 1 in the boards strip
+    this.workspaceBoards.update(list => {
+      const idx = list.findIndex(b => b.id === board.id);
+      if (idx <= 0) return list; // already first, or not found — no reorder needed
+      const target = list[idx];
+      const rest = [...list.slice(0, idx), ...list.slice(idx + 1)];
+      return [target, ...rest];
+    });
+
     // Background access tracker — failure shouldn't interrupt the user, no toast.
     this.boardService.trackBoardAccess(board.id).subscribe({
       next: () => this.loadRecentBoards(),
@@ -533,7 +549,6 @@ export class WorkspacesComponent implements OnInit {
     const wsId = board.workSpaceId;
     if (wsId == null || board.id == null) return;
 
-    // Push the owning workspace to the front of the list
     this.workspaces.update(list => {
       const idx = list.findIndex(ws => ws.id === wsId);
       if (idx <= 0) return list;
@@ -543,14 +558,21 @@ export class WorkspacesComponent implements OnInit {
     });
 
     this.activeWorkspaceId.set(wsId);
+    this.sidebarMenuOpen.set(false);
 
     this.boardsLoading.set(true);
     this.boardService.getBoardsByWorkspace(String(wsId)).subscribe({
       next: (boards) => {
-        this.workspaceBoards.set(boards);
+        const targetBoard = boards.find(b => b.id === board.id);
+
+        // Push clicked board to position 1 before setting the signal
+        const ordered = targetBoard
+          ? [targetBoard, ...boards.filter(b => b.id !== board.id)]
+          : boards;
+
+        this.workspaceBoards.set(ordered);
         this.boardsLoading.set(false);
 
-        const targetBoard = boards.find(b => b.id === board.id);
         if (!targetBoard) return;
 
         this.selectedBoardId.set(targetBoard.id);
@@ -711,6 +733,8 @@ export class WorkspacesComponent implements OnInit {
       const rest = [...list.slice(0, idx), ...list.slice(idx + 1)];
       return [target, ...rest];
     });
+
+    this.sidebarMenuOpen.set(false); // close drawer on selection (mobile)
   }
 
   getLastActivityLabel(ws: Workspace): string | null {
@@ -1072,14 +1096,20 @@ export class WorkspacesComponent implements OnInit {
     });
 
     this.activeWorkspaceId.set(recent.workspaceId);
+    this.sidebarMenuOpen.set(false);
 
     this.boardsLoading.set(true);
     this.boardService.getBoardsByWorkspace(String(recent.workspaceId)).subscribe({
       next: (boards) => {
-        this.workspaceBoards.set(boards);
+        const targetBoard = boards.find(b => b.id === recent.id);
+
+        const ordered = targetBoard
+          ? [targetBoard, ...boards.filter(b => b.id !== recent.id)]
+          : boards;
+
+        this.workspaceBoards.set(ordered);
         this.boardsLoading.set(false);
 
-        const targetBoard = boards.find(b => b.id === recent.id);
         if (!targetBoard) return;
 
         this.selectedBoardId.set(targetBoard.id);

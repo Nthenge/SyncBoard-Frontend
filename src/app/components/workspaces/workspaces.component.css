@@ -1,6 +1,3 @@
-/* ═══════════════════════════════════════════════════════════════════════
-   Base Variables & Workspace Container
-═══════════════════════════════════════════════════════════════════════ */
 .workspaces-container {
   --ink: #12213B;
   --paper: #FAFAF9;
@@ -16,6 +13,7 @@
   --font-display: 'Space Grotesk', -apple-system, sans-serif;
   --font-body: 'Inter', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --mobile-header-h: 64px;
 
   height: 100vh;
   height: 100dvh;
@@ -83,76 +81,6 @@
 
 .nav-toggle-btn {
   display: none; /* Hidden on desktop */
-}
-
-@media (max-width: 760px) {
-  /* Ensure header container stretches full width */
-  .ws-topbar-header {
-    width: 100%;
-    position: relative;
-    z-index: 10000;
-  }
-
-  .nav-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.45rem 0.8rem;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--ink);
-    font-size: 0.8rem;
-    font-weight: 600;
-    position: relative;
-    z-index: 10001;
-    cursor: pointer;
-    margin-left: auto;
-  }
-
-  /* Fixed position setup for overlay alignment below header */
-  .ws-sidebar {
-    display: flex;
-    flex-direction: column;
-    position: fixed !important;
-    top: 58px;
-    right: 0 !important;
-    left: auto !important;
-    z-index: 9999;
-    
-    /* Dynamic compact width */
-    width: fit-content;
-    width: -moz-fit-content;
-    min-width: 200px;
-    max-width: 300px; /* Reduced width ceiling */
-    padding: 0.75rem; /* Compact inner spacing */
-    
-    /* 3/4 viewport height */
-    height: 200vh;
-    height: 75dvh;
-    
-    border-radius: 18px 0 0 18px;
-    box-shadow: -8px 16px 36px rgba(18, 33, 59, 0.25);
-    overflow-y: auto;
-    
-    opacity: 0;
-    visibility: hidden;
-    transform: translateX(100%);
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
-                opacity 0.2s ease, 
-                visibility 0.25s;
-  }
-
-  /* Compact text & buttons inside sidebar to fit smaller footprint */
-  .ws-sidebar * {
-    font-size: 0.85rem;
-  }
-
-  .ws-sidebar.is-open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0);
-  }
 }
 
 .modal {
@@ -1434,6 +1362,16 @@
   flex-shrink: 0;
 }
 
+.notif-dd-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.notif-dd-header .btn-close {
+  font-size: 1.1rem;
+}
+
 .notif-dd-title {
   font-family: var(--font-display);
   font-size: 0.9rem;
@@ -1658,9 +1596,24 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 14px;
+  min-width: 0;
   cursor: pointer;
   overflow: hidden;
   transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.wc-desc,
+.wc-name,
+.detail-heading h2,
+.dbc-name,
+.detail-board-name {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ws-split-left,
+.ws-detail-panel {
+  min-width: 0;
 }
 
 .workspace-card:hover {
@@ -1796,6 +1749,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 0.4rem;
   gap: 0.6rem;
   margin-top: 0.2rem;
 }
@@ -1823,6 +1778,8 @@
 .wc-avatar-stack {
   display: flex;
   align-items: center;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .wc-member-avatar {
@@ -1873,6 +1830,8 @@
 
 .wc-footer {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 0.3rem;
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 0.9rem;
@@ -1881,6 +1840,10 @@
 }
 
 .member-count {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 0.72rem;
   color: var(--muted);
@@ -2040,6 +2003,8 @@
 
 .detail-heading-group {
   display: flex;
+  min-width: 0;
+  flex: 1;
   align-items: center;
   gap: 0.8rem;
   min-width: 0;
@@ -2053,6 +2018,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .detail-desc {
@@ -2077,6 +2044,7 @@
 .detail-name-row {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 0.4rem;
   position: relative;
 }
@@ -2565,7 +2533,7 @@
 }
 
 .detail-list-col {
-  flex: 0 0 160px;
+  flex: 0 0 min(160px, 80vw);
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -2635,6 +2603,8 @@
 }
 
 .ws-detail-footer {
+  flex-wrap: wrap;
+  row-gap: 0.3rem;
   flex-shrink: 0;
   width: 100%;
   height: 44px;
@@ -2699,6 +2669,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-width: 0;
   gap: 0.5rem;
 }
 
@@ -2708,6 +2679,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .dcc-meta {
@@ -2813,8 +2785,21 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Comprehensive Media Queries
+   Responsive Breakpoints
+   Wide desktop (≥1400) → Laptop (default) → Small laptop (≤1100)
+   → Tablet (≤900) → Mobile / drawer sidebar (≤768) → Small phone (≤480)
+   → Very small phone (≤360) → Short-height landscape
 ═══════════════════════════════════════════════════════════════════════ */
+
+/* Wide desktop */
+@media (min-width: 1400px) {
+  .ws-main {
+    padding-left: clamp(1.5rem, 4vw, 3rem);
+    padding-right: clamp(1.5rem, 4vw, 3rem);
+  }
+  .ws-split { gap: 2rem; }
+  .workspace-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+}
 
 /* Medium Desktops / Large Tablets (<= 1100px) */
 @media (max-width: 1100px) {
@@ -2848,77 +2833,290 @@
   }
 }
 
-/* Mobile & Small Screens (<= 720px) */
-@media (max-width: 720px) {
+/* Mobile & Small Screens (<= 768px) — sidebar becomes an off-canvas drawer,
+   toggled by nav-toggle-btn. This replaces the two conflicting mobile rules
+   (760px overlay drawer + a separate 720px stacked-layout override) that
+   existed before — they fought over position/width/height on the same
+   element. There is now a single source of truth for mobile. */
+@media (max-width: 768px) {
+
+  html, body, * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
+  .notif-dd-panel {
+    position: fixed;
+    top: calc(var(--mobile-header-h) + 6px);
+    right: 12px;
+    left: auto;
+    width: min(340px, calc(100vw - 24px));
+  }
+
+  .ws-topbar-actions .icon-btn.icon-btn--logout {
+    display: flex;
+  }
+
+  .ws-topbar-actions .icon-btn.icon-btn--logout:hover {
+    border-color: #C5364C;
+    color: #C5364C;
+    background: rgba(251, 113, 133, 0.08);
+  }
+
+  .ws-topbar-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: nowrap; /* keep bell, settings, and create button on one line */
+    gap: 0.5rem;
+  }
+
+  .btn-create {
+    flex: 1 1 auto; /* fills remaining space next to the icon buttons */
+    min-width: 0;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .icon-btn {
+    flex-shrink: 0; /* bell/settings keep their size, never compress */
+  }
+
+  .detail-boards-scroll {
+    overflow-x: auto;      /* was: visible */
+    overflow-y: hidden;
+    mask-image: none;
+    -webkit-mask-image: none;
+    padding-bottom: 10px;  /* room for the scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+
+  .detail-header {
+    flex-wrap: nowrap; /* keep name and button on one row, just resize button */
+    gap: 0.5rem;
+  }
+
+  .detail-heading-group {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .btn-expand {
+    flex-shrink: 0;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.75rem;
+    gap: 0.3rem;
+  }
+
+  .detail-boards-scroll::-webkit-scrollbar {
+    display: block; /* override the earlier universal *::-webkit-scrollbar { display:none } */
+    height: 6px;
+    width: auto;
+  }
+
+  .detail-boards-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .detail-boards-scroll::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 999px;
+  }
+
+  .detail-boards-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+  }
+
+  .detail-board-grid {
+    flex-wrap: nowrap;     /* was: wrap */
+    gap: 0.7rem;
+  }
+
+  .detail-board-card {
+    flex: 0 0 160px;       /* fixed width instead of 50% */
+    min-width: 0;
+  }
+  
+  .dbc-titlebar {
+    padding: 0.45rem 0.5rem;
+    gap: 0.35rem;
+  }
+
+  .dbc-avatar {
+    width: 16px;
+    height: 16px;
+    font-size: 0.58rem;
+    border-radius: 5px;
+  }
+
+  .dbc-name {
+    font-size: 0.72rem;
+  }
+
+  .dbc-body {
+    padding: 0.45rem 0.5rem;
+  }
+
+  .dbc-desc {
+    font-size: 0.68rem;
+    line-height: 1.35;
+    -webkit-line-clamp: 2;
+  }
+
+  .detail-lists-row {
+    overflow-x: auto; /* lists inside a board genuinely need horizontal scroll, keep it */
+  }
+
+  .detail-list-col {
+    min-width: 0;
+  }
+
   .workspaces-container {
     flex-direction: column;
     height: auto;
     min-height: 100vh;
     min-height: 100dvh;
-    overflow: visible;
+    overflow: visible; /* was 'hidden' — that clips ancestor and breaks position: sticky below */
   }
 
-  /* Sidebar transforms to full-width top header/bar */
-  .ws-sidebar {
-    flex: none;
-    width: 100%;
-    height: auto;
-    max-height: none;
-    flex-direction: column;
-    border-right: none;
+  .ws-topbar-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 500;
+
+    background: var(--surface);
     border-bottom: 1px solid var(--line);
-    padding: 0.8rem 1rem;
-    gap: 0.75rem;
-    overflow: visible;
+    box-shadow: 0 4px 14px -10px rgba(18, 33, 59, 0.25);
+
+    /* full-bleed to true viewport width regardless of .ws-main's padding */
+    width: 100%;;
+    margin: 0 0 1.1rem;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    margin-top: -1.25rem;
+    margin-bottom: 1.1rem;
+
+    padding: calc(0.85rem + 8px) 1rem 0.85rem;
+    box-sizing: border-box;
+    min-height: var(--mobile-header-h);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
-  .sidebar-top-group {
-    width: 100%;
+  .nav-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink);
+    font-size: 0.8rem;
+    font-weight: 600;
+    position: relative;
+    z-index: 10001;
+    cursor: pointer;
+    margin-left: auto;
+    min-height: 44px; /* touch target */
   }
 
-  .sidebar-account {
-    margin-bottom: 0.6rem;
+  .ws-sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: var(--mobile-header-h);
+    right: 0;
+    left: auto;
+    z-index: 9999;
+
+    width: min(70vw, 260px); /* was min(86vw, 320px) — narrower */
+    min-width: 220px;
+    max-width: 260px;
+    padding: 0.85rem;
+    border-right: none;
+
+    /* Full remaining height from header to bottom of device — no cap, no gap */
+    height: calc(100dvh - var(--mobile-header-h));
+
+    border-radius: 18px 0 0 0; /* bottom-left no longer rounded since it now meets the screen edge */
+    box-shadow: -8px 16px 36px rgba(18, 33, 59, 0.25);
+    overflow-y: auto;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.2s ease,
+                visibility 0.25s;
   }
+
+  .ws-sidebar * { font-size: 0.85rem; }
+
+  .ws-sidebar.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+  }
+  .members-dd-panel {
+    width: 172px;
+    padding: 0.3rem;
+  }
+
+  .members-dd-label {
+    font-size: 0.56rem;
+    margin: 0.05rem 0.2rem 0.3rem;
+  }
+
+  .detail-member-item {
+    padding: 0.28rem 0.3rem;
+    gap: 0.35rem;
+  }
+
+  .detail-member-item .wc-member-avatar {
+    width: 15px;
+    height: 15px;
+    font-size: 0.5rem;
+  }
+
+  .detail-member-name {
+    min-width: 0;
+    max-width: 78px;
+    font-size: 0.7rem;
+  }
+
+  .detail-member-item .role-badge {
+    flex-shrink: 0;
+    font-size: 0.54rem;
+    padding: 0.08rem 0.28rem;
+  }
+
+  .tab-content { max-height: 200px; }
 
   .account-menu {
     position: fixed;
-    top: 60px;
+    top: calc(var(--mobile-header-h) + 6px);
     left: 12px;
     right: 12px;
     width: auto;
   }
 
-  .sidebar-search {
-    margin-bottom: 0;
-  }
-
-  .sidebar-half--workspaces {
-    flex: none;
-  }
-
-  .sidebar-ws-list {
-    max-height: 160px;
-    mask-image: none;
-    -webkit-mask-image: none;
-  }
-
-  .sidebar-new-btn {
-    margin: 0.5rem 0;
-  }
-
-  .sidebar-half--quickaccess {
-    flex: none;
-  }
-
-  .tab-content {
-    max-height: 200px;
-  }
-
-  /* Main content layout adjustment */
   .ws-main {
     height: auto;
     overflow: visible;
-    padding: 1.25rem 1rem 2.5rem;
+    overflow-x: hidden;
+    padding: calc(var(--mobile-header-h) + 1.25rem) 1rem 2.5rem;
   }
 
   .ws-topbar {
@@ -2932,17 +3130,60 @@
     justify-content: space-between;
   }
 
+  .icon-btn { width: 44px; height: 44px; } /* touch target */
+
   .btn-create {
     flex: 1;
     justify-content: center;
+    min-height: 44px;
+  }
+
+  .workspace-grid-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-mask-image: none; /* remove the vertical fade mask, no longer relevant */
+    mask-image: none;
+    padding-bottom: 10px; /* room for the scrollbar itself so it doesn't crowd the cards */
   }
 
   .workspace-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.9rem;
+    grid-template-columns: unset; /* undo the old grid: 1fr */
   }
 
-  .detail-board-card {
-    flex: 0 0 130px;
+  .workspace-card {
+    flex: 0 0 240px; /* fixed card width so they scroll instead of stack/wrap */
+    min-width: 0;
+  }
+
+  .empty-state {
+    flex: 1 0 100%; /* empty state still spans full width when no cards */
+  }
+
+  /* Slim, styled horizontal scrollbar */
+  .workspace-grid-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+
+  .workspace-grid-scroll::-webkit-scrollbar {
+    height: 6px;
+    width: auto;
+  }
+
+  .workspace-grid-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .workspace-grid-scroll::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 999px;
+  }
+
+  .workspace-grid-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
   }
 
   .step-label {
@@ -2955,13 +3196,206 @@
     max-height: 90dvh;
   }
 
-  .modal-header, 
-  .modal-body, 
-  .modal-footer, 
+  .modal-header,
+  .modal-body,
+  .modal-footer,
   .step-indicator {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
   }
+
+  .sidebar-half--workspaces {
+    flex: 0 1 auto; /* shrink to content, don't grab extra space */
+  }
+
+  .sidebar-half--quickaccess {
+    flex: 1 1 auto; /* takes all remaining vertical space */
+    min-height: 0;
+  }
+
+  .sidebar-ws-list {
+    max-height: 140px; /* keep workspace list compact so quick access gets the room */
+  }
+
+  .tab-content {
+    max-height: none; /* was 200px — let it fill remaining flex space instead */
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+/* Small phones (<= 480px) */
+@media (max-width: 480px) {
+
+  .workspace-card {
+    flex: 0 0 200px; /* slightly narrower cards on small phones */
+  }
+
+  .ws-sidebar {
+    width: min(78vw, 240px); /* was 90vw — keep it narrow here too */
+    min-width: 0;
+    border-radius: 14px 0 0 0;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+  
+  .btn-expand {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.68rem;
+    flex-direction: column;
+    gap: 0.15rem;
+    line-height: 1.2;
+  }
+
+  .btn-expand .expand-arrow {
+    font-size: 0.85rem;
+  }
+
+  .modal-footer .btn-cancel,
+  .modal-footer .btn-confirm {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .invite-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-send-invite {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .role-picker {
+    justify-content: stretch;
+  }
+
+  .chip-option {
+    flex: 1;
+    text-align: center;
+  }
+
+  .stats-bar {
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+  }
+
+  .stat-chip {
+    flex: 1 1 0; /* equal width, shrinkable — replaces the old 1 1 100% */
+    min-width: 0;
+    padding: 0.5rem 0.6rem;
+    gap: 0.25rem;
+    flex-direction: column;      /* stack value above label instead of side-by-side */
+    align-items: flex-start;
+  }
+
+  .stat-value {
+    font-size: 0.95rem;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .notif-dd-panel {
+      right: 12px; /* consistent right-edge anchor, no negative offset */
+      width: calc(100vw - 24px);
+    }
+
+  .members-dd-panel {
+    width: calc(100vw - 12rem);
+    max-width: 260px;
+    left: auto;
+    right: 0;
+  }
+
+  .detail-member-item {
+    gap: 0.4rem;
+  }
+
+  .detail-member-name {
+    min-width: 0;      /* the actual fix — lets it shrink and ellipsis engage */
+    max-width: 110px;  /* hard cap so long names truncate instead of squeezing the badge */
+    font-size: 0.8rem;
+  }
+
+  .role-badge {
+    flex-shrink: 0;     /* role badge always stays full width, never gets squished */
+    font-size: 0.62rem;
+    padding: 0.15rem 0.35rem;
+  }
+
+  .wc-menu {
+    width: 170px;
+  }
+
+  .detail-board-card {
+    flex: 0 0 140px; /* slightly narrower on small phones */
+  }
+
+  .detail-board-grid {
+    gap: 0.5rem;
+  }
+
+  .dbc-name {
+    font-size: 0.68rem;
+  }
+
+  .dbc-desc {
+    font-size: 0.64rem;
+    -webkit-line-clamp: 1; /* single line only — card is now quite small */
+  }
+
+  .detail-list-col {
+    flex: 0 0 min(160px, 80vw);
+  }
+}
+
+/* Very small phones (<= 360px) */
+@media (max-width: 360px) {
+  .ws-topbar h1 {
+    font-size: 1.15rem;
+  }
+
+  .btn-create {
+    padding: 0.65rem 1rem;
+    font-size: 0.82rem;
+  }
+
+  .sidebar-tab {
+    font-size: 0.75rem;
+  }
+
+  .ws-sidebar {
+    width: 94vw;
+  }
+}
+
+/* Short-height / landscape phones and small laptops in split view */
+@media (max-height: 480px) and (orientation: landscape) {
+  .workspaces-container {
+    --mobile-header-h: 52px;
+  }
+
+  .ws-sidebar {
+    top: var(--mobile-header-h);
+    height: min(92dvh, calc(100dvh - var(--mobile-header-h) - 12px));
+  }
+
+  .modal {
+    max-height: 94vh;
+    max-height: 94dvh;
+  }
+
+  .sidebar-ws-list { max-height: 110px; }
+  .tab-content { max-height: 140px; }
 }
 
 /* Reduced Motion Preferences */
