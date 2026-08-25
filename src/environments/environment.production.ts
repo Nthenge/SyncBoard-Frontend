@@ -2,7 +2,7 @@ import { endpoints } from '../app/config/endpoints';
 
 export const environment = {
   production: true,
-  apiUrl: 'https://syncboard-ptvu.onrender.com',
+  apiUrl: 'https://flowdeck-kyjm.onrender.com',
   api: {
     basePath: '',
     endpoints: endpoints
