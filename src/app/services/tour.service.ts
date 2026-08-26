@@ -14,7 +14,7 @@ export class TourService {
                 element: '.sidebar-tab-bar',
                 popover: {
                     title: 'Quick actions',
-                    description: 'Quick actions regarding boards and jobs assigned to you — starred items, recent activity, your tasks, due dates, invitations, and your scratchpad, all one click away.',
+                    description: 'Quick actions regarding boards and jobs assigned to you starred items, recent activity, your tasks, due dates, invitations, and your scratchpad, all one click away.',
                     side: 'right',
                     align: 'start'
                 }
@@ -55,8 +55,17 @@ export class TourService {
                 element: '#tour-empty-create-btn',
                 popover: {
                     title: 'Create your first workspace',
-                    description: 'Start here — create a workspace, then invite your team to collaborate on boards together.',
+                    description: 'Start here create a workspace, then invite your team to collaborate on boards together.',
                     side: 'top',
+                    align: 'start'
+                }
+            },
+            {
+                element: '.sidebar-tab-bar',
+                popover: {
+                    title: 'Quick actions',
+                    description: 'Quick actions regarding boards and jobs assigned to you starred items, recent activity, your tasks, due dates, invitations, and your scratchpad, all one click away.',
+                    side: 'right',
                     align: 'start'
                 }
             },
