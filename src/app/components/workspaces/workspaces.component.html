@@ -271,8 +271,10 @@
       <div class="ws-title-group">
         <h1>FLOWDECK</h1>
         <!-- Mobile toggle button aligned directly inline with title -->
-        <button class="nav-toggle-btn" (click)="toggleSidebarMenu()" aria-label="Toggle navigation menu">
-          <span>{{ sidebarMenuOpen() ? 'Close' : 'Menu' }}</span>
+        <button class="nav-toggle-btn" [class.nav-toggle-btn--open]="sidebarMenuOpen()" (click)="toggleSidebarMenu(); $event.stopPropagation()" aria-label="Toggle navigation menu">
+          <span></span>
+          <span></span>
+          <span></span>
         </button>
       </div>
       <p class="ws-topbar-sub">Your team's workspaces.</p>

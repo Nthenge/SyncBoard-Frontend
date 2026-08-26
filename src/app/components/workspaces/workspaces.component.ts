@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, HostListener, ElementRef, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -56,6 +56,7 @@ export class WorkspacesComponent implements OnInit {
   private notificationService = inject(NotificationService);
   private toast = inject(ToastService);
   private tourService = inject(TourService);
+  private elementRef = inject(ElementRef);
 
   workspaceBoards = signal<Board[]>([]);
   boardsLoading = signal(false);
@@ -103,6 +104,13 @@ export class WorkspacesComponent implements OnInit {
 
   toggleSidebarMenu() {
     this.sidebarMenuOpen.update(open => !open);
+  }
+
+  @HostListener('document:click')
+  closeSidebarOnOutsideClick(): void {
+    if (this.sidebarMenuOpen()) {
+      this.sidebarMenuOpen.set(false);
+    }
   }
 
   private scratchpadChange$ = new Subject<string>();
