@@ -3015,57 +3015,52 @@
   }
 
   .nav-toggle-btn {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  width: 32px;
-  height: 32px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink);
+    font-size: 0.8rem;
+    font-weight: 600;
+    position: relative;
+    z-index: 10001;
+    cursor: pointer;
+    margin-left: auto;
+    min-height: 44px; /* touch target */
+  }
 
-.nav-toggle-btn span {
-  display: block;
-  width: 100%;
-  height: 2px;
-  background: var(--ink);
-  border-radius: 2px;
-  transition: transform 0.25s ease, opacity 0.25s ease;
-}
+  .ws-sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: var(--mobile-header-h);
+    right: 0;
+    left: auto;
+    z-index: 9999;
 
-.nav-toggle-btn--open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.nav-toggle-btn--open span:nth-child(2) { opacity: 0; }
-.nav-toggle-btn--open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    width: min(70vw, 260px); /* was min(86vw, 320px) — narrower */
+    min-width: 220px;
+    max-width: 260px;
+    padding: 0.85rem;
+    border-right: none;
 
-.ws-sidebar {
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: var(--mobile-header-h);
-  right: 0;
-  left: auto;
-  bottom: 0;
-  z-index: 9999;
+    /* Full remaining height from header to bottom of device — no cap, no gap */
+    height: calc(100dvh - var(--mobile-header-h));
 
-  width: 280px;
-  padding: 0.85rem;
-  border-right: none;
+    border-radius: 18px 0 0 0; /* bottom-left no longer rounded since it now meets the screen edge */
+    box-shadow: -8px 16px 36px rgba(18, 33, 59, 0.25);
+    overflow-y: auto;
 
-  height: calc(100dvh - var(--mobile-header-h));
-
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
-  overflow-y: auto;
-
-  transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ws-sidebar.is-open {
-  transform: translateX(0);
-}
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.2s ease,
+                visibility 0.25s;
+  }
 
   .ws-sidebar * { font-size: 0.85rem; }
 
@@ -3234,6 +3229,12 @@
 
   .workspace-card {
     flex: 0 0 200px; /* slightly narrower cards on small phones */
+  }
+
+  .ws-sidebar {
+    width: min(78vw, 240px); /* was 90vw — keep it narrow here too */
+    min-width: 0;
+    border-radius: 14px 0 0 0;
   }
 
   .modal-footer {
