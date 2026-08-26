@@ -92,6 +92,30 @@ export class AuthService {
         this.currentUserSignal.set(userWithName);
     }
 
+    async markOnboardingComplete(): Promise<void> {
+        const token = this.getAccessToken();
+        if (!token) return;
+
+        const current = this.currentUserSignal();
+        if (current) {
+            const updated = { ...current, hasSeenOnboarding: true };
+            localStorage.setItem('syncboard_user', JSON.stringify(updated));
+            this.currentUserSignal.set(updated as User);
+        }
+
+        try {
+            await firstValueFrom(
+                this.http.patch(
+                    `${environment.apiUrl}${environment.api?.basePath ?? ''}/user/onboarding-complete`,
+                    {},
+                    { headers: { Authorization: `Bearer ${token}` } }
+                )
+            );
+        } catch (error) {
+            console.warn('Failed to persist onboarding status', error);
+        }
+    }
+
     getAccessToken(): string | null {
         return this.tokenSignal() || localStorage.getItem('syncboard_token');
     }

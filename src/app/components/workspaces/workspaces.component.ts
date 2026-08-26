@@ -20,6 +20,7 @@ import { NotificationService } from '../../services/notification.service';
 import { AppNotification } from '../../models/board.models';
 import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../toast/toast.component';
+import { TourService } from '../../services/tour.service';
 
 type ModalStep = 'create' | 'invite';
 
@@ -54,6 +55,7 @@ export class WorkspacesComponent implements OnInit {
   private boardMemberService = inject(BoardMemberService);
   private notificationService = inject(NotificationService);
   private toast = inject(ToastService);
+  private tourService = inject(TourService);
 
   workspaceBoards = signal<Board[]>([]);
   boardsLoading = signal(false);
@@ -391,9 +393,6 @@ export class WorkspacesComponent implements OnInit {
   }
 
   private saveScratchpad(content: string): void {
-    // Autosaves on a 1.5s debounce — a success toast per keystroke pause
-    // would be noisy, so only surface a failure (the "Saved {time}" label
-    // already gives success feedback in the panel itself).
     this.scratchpadSaving.set(true);
     this.workspaceService.updateScratchpad(content).subscribe({
       next: (res) => {
@@ -414,21 +413,35 @@ export class WorkspacesComponent implements OnInit {
   }
 
   loadWorkspaces(): void {
-    this.loading.set(true);
-    this.workspaceService.getMyWorkspaces().subscribe({
-      next: (workspaces) => {
-        this.workspaces.set(workspaces);
-        this.loading.set(false);
-        if (workspaces.length > 0 && this.activeWorkspaceId() === null) {
-          this.activeWorkspaceId.set(workspaces[0].id);
-          this.loadBoardsForWorkspace(workspaces[0].id);
+      this.loading.set(true);
+      this.workspaceService.getMyWorkspaces().subscribe({
+        next: (workspaces) => {
+          this.workspaces.set(workspaces);
+          this.loading.set(false);
+          if (workspaces.length > 0 && this.activeWorkspaceId() === null) {
+            this.activeWorkspaceId.set(workspaces[0].id);
+            this.loadBoardsForWorkspace(workspaces[0].id);
+          }
+          this.maybeStartTour();
+        },
+        error: () => {
+          this.loading.set(false);
+          this.toast.show('Failed to load workspaces.', 'error');
         }
-      },
-      error: () => {
-        this.loading.set(false);
-        this.toast.show('Failed to load workspaces.', 'error');
-      }
-    });
+      });
+  }
+
+  private maybeStartTour(): void {
+      const user = this.authService.user();
+      if (!user || user.hasSeenOnboarding) return;
+
+      setTimeout(() => {
+        if (this.workspaces().length > 0) {
+          this.tourService.startTour();
+        } else {
+          this.tourService.startEmptyStateTour();
+        }
+      }, 400);
   }
 
   private loadBoardsForWorkspace(workspaceId: string | number): void {

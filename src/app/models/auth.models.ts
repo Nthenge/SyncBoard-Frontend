@@ -6,6 +6,7 @@ export interface User {
   avatarUrl?: string;
   password?: string;
   name?: string; 
+  hasSeenOnboarding: boolean;
 }
 
 export interface AuthResponse {
@@ -21,7 +22,8 @@ export interface AuthResponse {
     sirName?: string;
     avatarUrl?: string;  
     refreshToken: string; // <-- Added to match backend login payload
-    role?: string;        // <-- Added to match backend login payload
+    role?: string;
+    hasSeenOnboarding: boolean;        // <-- Added to match backend login payload
   };
 }
 

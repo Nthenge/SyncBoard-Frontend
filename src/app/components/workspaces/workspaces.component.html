@@ -368,11 +368,11 @@
   <div class="workspace-grid">
 
     <div class="workspace-card"
-         *ngFor="let ws of workspaces()"
-         [class.workspace-card--active]="ws.id === activeWorkspaceId()"
-         tabindex="0"
-         (click)="selectWorkspace(ws.id)"
-         (keyup.enter)="selectWorkspace(ws.id)">
+      *ngFor="let ws of workspaces(); let i = index"
+      [class.workspace-card--active]="ws.id === activeWorkspaceId()"
+      tabindex="0"
+      (click)="selectWorkspace(ws.id)"
+      (keyup.enter)="selectWorkspace(ws.id)">
 
       <div class="wc-titlebar">
         <div class="wc-avatar">{{ getInitial(ws.workSpaceName) }}</div>
@@ -382,7 +382,10 @@
           [attr.aria-label]="ws.isStarred ? 'Unstar workspace' : 'Star workspace'">{{ ws.isStarred ? '★' : '☆' }}</button>
 
         <div class="wc-menu-wrap">
-          <button class="wc-kebab" (click)="toggleCardMenu(ws.id, $event)" aria-label="Workspace options">⋯</button>
+          <button class="wc-kebab"
+            [attr.id]="i === 0 ? 'tour-ws-kebab' : null"
+            (click)="toggleCardMenu(ws.id, $event)"
+            aria-label="Workspace options">⋯</button>
           <div class="wc-menu-backdrop" *ngIf="cardMenuOpenId() === ws.id" (click)="closeCardMenuBackdrop($event)"></div>
           <div class="wc-menu" *ngIf="cardMenuOpenId() === ws.id" (click)="$event.stopPropagation()">
           <button class="wc-menu-item" *ngIf="getRole(ws) === 'Admin'" (click)="editWorkspace(ws, $event)">Edit workspace</button>
@@ -419,7 +422,7 @@
       <div class="empty-icon">🗂️</div>
       <h3>No workspaces yet</h3>
       <p>Create a workspace, invite your team, then start building boards together.</p>
-      <button class="btn-create" (click)="openCreateModal()">+ Create workspace</button>
+      <button id="tour-empty-create-btn" class="btn-create" (click)="openCreateModal()">+ Create workspace</button>
     </div>
 
   </div>
