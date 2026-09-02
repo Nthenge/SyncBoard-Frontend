@@ -8,6 +8,7 @@ export const endpoints = {
     update: '/user/update',
     resetPassword: '/user/reset-password',
     confirmAccount: '/user/confirm',
+    resendConfirmation: '/user/resend-confirmation',
     resetPasswordRequest: '/user/reset-password-request',
     forgotPassword: '/user/reset-password-request',
     logout: '/user/logout',

@@ -32,6 +32,9 @@ export class LoginComponent implements OnInit {
     loading = signal(false);
     error = signal('');
     successMessage = signal('');
+    unconfirmedEmail = signal('');
+    resendState = signal<'idle' | 'sending' | 'sent'>('idle');
+    resendError = signal('');
 
     isLoggedIn = computed(() => this.authService.isLoggedIn());
     userName = computed(() => {
@@ -88,9 +91,33 @@ export class LoginComponent implements OnInit {
                 return;
             }
 
+            if (message.toLowerCase().includes('not confirmed')) {
+                this.unconfirmedEmail.set(this.loginForm.value.email ?? '');
+                this.resendState.set('idle');
+                this.resendError.set('');
+                this.error.set(message);
+                return;
+            }
+
             this.error.set(message);
         } finally {
             this.loading.set(false);
+        }
+    }
+
+    async resendConfirmation(): Promise<void> {
+        const email = this.unconfirmedEmail();
+        if (!email) return;
+
+        this.resendState.set('sending');
+        this.resendError.set('');
+
+        try {
+            await this.authService.resendConfirmation(email);
+            this.resendState.set('sent');
+        } catch (err) {
+            this.resendState.set('idle');
+            this.resendError.set(err instanceof Error ? err.message : 'Could not resend. Try again.');
         }
     }
 

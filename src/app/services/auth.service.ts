@@ -387,6 +387,20 @@ async fetchAvatarAsBlobUrl(url: string): Promise<string> {
     });
     }
 
+    async resendConfirmation(email: string): Promise<void> {
+        try {
+            await firstValueFrom(
+                this.http.post(
+                    `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.resendConfirmation}`,
+                    { email }
+                )
+            );
+        } catch (error: any) {
+            const backendMessage = error?.error?.message;
+            throw new Error(backendMessage || 'Could not resend confirmation email. Please try again.');
+        }
+    }
+
     private clearAllAuthData(): void {
         localStorage.removeItem('syncboard_token');
         localStorage.removeItem('syncboard_refresh_token');
