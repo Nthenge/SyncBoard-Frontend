@@ -18,7 +18,7 @@ export const routes: Routes = [
   { path: '', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
-  { path: 'confirm-account',loadComponent: () => import('./components/auth/confirm-account/confirm-account.component').then(m => m.ConfirmAccountComponent)},
+  { path: 'confirm-account', component: LandingComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', loadComponent: () => import('./components/auth/reset-password/reset-password.component').then(m => m.ResetPasswordComponent) },
   { path: 'accept-invite/:token', component: EmailConfirmComponent },

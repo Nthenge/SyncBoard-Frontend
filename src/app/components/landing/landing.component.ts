@@ -1,6 +1,8 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { FormsModule } from '@angular/forms';
 import { TalkService } from '../../services/talk.service';
 import { Issue } from '../../models/board.models';
@@ -19,8 +21,13 @@ type InfoModalType = 'privacy' | 'terms' | 'security' | 'careers' | null;
 })
 export class LandingComponent implements OnInit {
   private talkService = inject(TalkService);
+  private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
 
-  authModal = signal<'login' | 'register' | 'forgot' | null>(null);
+  authModal = signal<'login' | 'register' | 'forgot' | 'confirm' | null>(null);
+
+  confirmState = signal<'loading' | 'already-confirmed' | 'success' | 'error'>('loading');
+  confirmErrorMessage = signal('');
 
   infoModal = signal<InfoModalType>(null);
   privacyAgreed = signal(false);
@@ -57,6 +64,11 @@ export class LandingComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    const token = this.route.snapshot.queryParamMap.get('token');
+    if (token) {
+      this.authModal.set('confirm');
+      this.confirmAccount(token);
+    }
     this.talkService.getActiveIssues().subscribe({
         next: (response: any) => {
             const list = Array.isArray(response) ? response : (response?.data ?? []);
@@ -73,6 +85,21 @@ export class LandingComponent implements OnInit {
   closeInfoModal(): void {
     this.infoModal.set(null);
   }
+
+  private confirmAccount(token: string): void {
+  this.authService.confirmAccount(token).subscribe({
+    next: () => this.confirmState.set('success'),
+    error: (err) => {
+      const message: string = err?.error?.message || '';
+      if (message.toLowerCase().includes('already confirmed')) {
+        this.confirmState.set('already-confirmed');
+      } else {
+        this.confirmState.set('error');
+        this.confirmErrorMessage.set(message || 'This link is invalid or has expired.');
+      }
+    }
+  });
+}
 
   agreeToPrivacy(): void {
     this.privacyAgreed.set(true);

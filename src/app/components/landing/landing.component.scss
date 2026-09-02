@@ -884,6 +884,44 @@ body { font-family: $font-body; color: $ink; line-height: 1.6; background: $pape
   &:hover { background: $line; color: $ink; }
 }
 
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 8px;
+
+  h1 { margin: 12px 0 0; }
+  p { margin: 0 0 8px; }
+}
+
+.icon-pulse {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.dot { fill: $accent; }
+
+.link {
+  stroke: $accent;
+  stroke-width: 2;
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: draw 0.5s ease forwards 0.2s;
+
+  &--broken {
+    stroke: $coral;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+}
+
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-pulse, .link { animation: none; }
+}
+
 .info-modal-header {
   display: flex;
   align-items: flex-start;
