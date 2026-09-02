@@ -1,0 +1,45 @@
+<div class="canvas">
+  <div class="mark">FlowDeck</div>
+
+  <div class="panel">
+    <ng-container [ngSwitch]="state">
+
+      <div *ngSwitchCase="'loading'" class="status">
+        <span class="node node--pulse"></span>
+        <h1>Confirming your account</h1>
+        <p>Give us a moment while we verify your link.</p>
+      </div>
+
+      <div *ngSwitchCase="'success'" class="status">
+        <svg class="connect" width="72" height="40" viewBox="0 0 72 40" fill="none" aria-hidden="true">
+          <circle class="dot dot--a" cx="14" cy="20" r="7"/>
+          <circle class="dot dot--b" cx="58" cy="20" r="7"/>
+          <line class="link" x1="21" y1="20" x2="51" y2="20"/>
+        </svg>
+        <h1>Account confirmed</h1>
+        <p>Your email is verified and your board is ready.</p>
+        <button class="cta" (click)="goToLogin()">Log in</button>
+      </div>
+
+      <div *ngSwitchCase="'already-confirmed'" class="status">
+        <span class="node node--check" aria-hidden="true">✓</span>
+        <h1>Already confirmed</h1>
+        <p>This account was verified earlier. Log in to keep going.</p>
+        <button class="cta" (click)="goToLogin()">Log in</button>
+      </div>
+
+      <div *ngSwitchCase="'error'" class="status">
+        <svg class="broken" width="72" height="40" viewBox="0 0 72 40" fill="none" aria-hidden="true">
+          <circle class="dot dot--a" cx="14" cy="20" r="7"/>
+          <circle class="dot dot--b" cx="58" cy="20" r="7"/>
+          <line class="link link--broken" x1="21" y1="20" x2="34" y2="20"/>
+          <line class="link link--broken" x1="38" y1="20" x2="51" y2="20"/>
+        </svg>
+        <h1>We couldn't confirm that link</h1>
+        <p>{{ errorMessage }}</p>
+        <button class="cta cta--ghost" (click)="goToLogin()">Back to login</button>
+      </div>
+
+    </ng-container>
+  </div>
+</div>

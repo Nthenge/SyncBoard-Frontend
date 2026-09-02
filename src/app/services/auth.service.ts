@@ -380,6 +380,12 @@ async fetchAvatarAsBlobUrl(url: string): Promise<string> {
         }
     }
 
+    confirmAccount(token: string): Observable<void> {
+        return this.http.post<void>(`${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.confirmAccount}`, null, {
+    params: { token }
+  });
+}
+
     private clearAllAuthData(): void {
         localStorage.removeItem('syncboard_token');
         localStorage.removeItem('syncboard_refresh_token');

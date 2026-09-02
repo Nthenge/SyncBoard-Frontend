@@ -7,6 +7,7 @@ export const endpoints = {
     verifyEmail: '/user/confirm',
     update: '/user/update',
     resetPassword: '/user/reset-password',
+    confirmAccount: '/user/confirm',
     resetPasswordRequest: '/user/reset-password-request',
     forgotPassword: '/user/reset-password-request',
     logout: '/user/logout',
