@@ -1,12 +1,18 @@
 <!-- Navigation -->
 <nav class="navbar">
   <div class="nav-brand">
-    <span class="brand-mark">F</span>
+    <span class="brand-mark"><img src="/images/favicon.ico" alt="F"><img/></span>
     <span class="brand-text">Flowdeck</span>
   </div>
+  <div class="nav-links">
+    <!-- <a href="javascript:void(0)" class="nav-link">Product</a>
+    <a href="javascript:void(0)" class="nav-link">Solutions</a>
+    <a href="javascript:void(0)" class="nav-link">Pricing</a>
+    <a href="javascript:void(0)" class="nav-link">Resources</a> -->
+  </div>
   <div class="nav-actions">
-    <button type="button" class="btn-link" (click)="authModal.set('login')">Log In</button>
-    <button type="button" class="btn-primary" (click)="authModal.set('register')">Sign Up</button>
+    <button type="button" class="btn-primary" (click)="authModal.set('register')">Get Started</button>
+    <button type="button" class="btn-nav-secondary" (click)="authModal.set('login')">Log In</button>
   </div>
 </nav>
 
@@ -16,8 +22,7 @@
 
   <div class="hero-inner">
     <div class="hero-content">
-      <p class="hero-eyebrow">Your projects, on the same wavelength.</p>
-      <h1 class="hero-title">Bring teams together. Bring ideas to life.</h1>
+      <h1 class="hero-title">Bring teams together.<br /><span class="hero-title-accent">Bring ideas to life.</span></h1>
       <p class="hero-subtitle">
         One shared space to organize, manage, and ship. Every edit updates everywhere, instantly.
         </p>
@@ -28,76 +33,72 @@
     </div>
 
     <div class="hero-visual">
-      <div class="preview-peek"></div>
-
       <div class="board-preview">
-        <div class="hero-badge">
-          <div class="badge-avatars">
-            <span class="avatar avatar-1">A</span>
-            <span class="avatar avatar-2">W</span>
-            <span class="avatar avatar-3">+2</span>
-          </div>
-          <span class="badge-text">4 people here now</span>
-        </div>
-
         <div class="preview-window">
           <div class="preview-titlebar">
             <div class="preview-dots"><span></span><span></span><span></span></div>
             <span class="preview-board-name">Product Launch</span>
             <span class="preview-sync"><span class="sync-dot"></span>Synced</span>
+            <div class="badge-avatars">
+              <span class="avatar avatar-1">A</span>
+              <span class="avatar avatar-2">W</span>
+              <span class="avatar avatar-3">+4</span>
+            </div>
           </div>
 
           <div class="preview-lists">
             <div class="preview-list">
-              <div class="preview-list-title">To Do <span class="count">2</span></div>
+              <div class="preview-list-title">To Do <span class="count">4</span><span class="list-add">+</span></div>
               <div class="preview-card">
-                <span class="chip chip-amber">Design</span>
-                <p class="card-title">Landing page hero</p>
+                <span class="chip chip-blue">Design</span>
+                <p class="card-title">Design new landing page hero section</p>
+                <div class="card-meta">
+                  <span class="meta-item">🗌 1</span>
+                  <span class="meta-item">💬 2</span>
+                  <span class="card-avatar"></span>
+                </div>
+                <div class="cursor cursor-a">
+                  <svg viewBox="0 0 16 16" width="14" height="14"><path d="M1 1l6 13 2-5 5-2z" fill="currentColor"/></svg>
+                  <span class="cursor-tag">Aisha</span>
+                </div>
               </div>
-              <div class="preview-card">
-                <span class="chip chip-indigo">Backend</span>
-                <p class="card-title">Auth rate limiting</p>
+              <div class="preview-card preview-card--skeleton">
+                <span class="skeleton-line skeleton-line--full"></span>
+                <span class="skeleton-line skeleton-line--half"></span>
               </div>
             </div>
 
             <div class="preview-list preview-list--active">
-              <div class="preview-list-title">In Progress <span class="count">2</span></div>
-              <div class="preview-card">
-                <span class="chip chip-coral">Bug</span>
-                <p class="card-title">Fix Safari drag glitch</p>
-                <div class="card-progress"><span style="width: 60%;"></span></div>
-              </div>
-              <div class="preview-card">
-                <span class="chip chip-amber">Design</span>
-                <p class="card-title">Update onboarding copy</p>
-              </div>
-              <div class="cursor cursor-a">
-                <svg viewBox="0 0 16 16" width="14" height="14"><path d="M1 1l6 13 2-5 5-2z" fill="currentColor"/></svg>
-                <span class="cursor-tag">Aisha</span>
+              <div class="preview-list-title">In Progress <span class="count">2</span><span class="list-add">+</span></div>
+              <div class="preview-card preview-card--highlight">
+                <span class="chip chip-green">Engineering</span>
+                <p class="card-title">Integrate real-time collaboration engine</p>
+                <div class="card-meta card-meta--sync">
+                  <div class="avatar-duo">
+                    <span class="avatar avatar-1"></span>
+                    <span class="avatar avatar-2"></span>
+                  </div>
+                  <span class="syncing-status"><span class="sync-dot"></span>Syncing...</span>
+                </div>
               </div>
             </div>
 
             <div class="preview-list">
-              <div class="preview-list-title">Done <span class="count">2</span></div>
-              <div class="preview-card preview-card--done">
-                <span class="chip chip-mint">Feature</span>
-                <p class="card-title">Realtime cursors ✓</p>
-              </div>
-              <div class="preview-card preview-card--done">
-                <span class="chip chip-mint">Feature</span>
-                <p class="card-title">Drag animations ✓</p>
-              </div>
-              <div class="cursor cursor-b">
-                <svg viewBox="0 0 16 16" width="16" height="16"><path d="M1 1l6 13 2-5 5-2z" fill="currentColor"/></svg>
-                <span class="cursor-tag">Wanjiru</span>
+              <div class="preview-list-title">Done <span class="count">18</span><span class="list-add">+</span></div>
+              <div class="preview-card">
+                <span class="chip chip-purple">Marketing</span>
+                <p class="card-title">Finalize Q4 strategy deck</p>
+                <div class="card-meta">
+                  <span class="completed-status">✓ Completed</span>
+                  <span class="card-avatar"></span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="preview-meta">
-            <span>Updated 2 min ago</span>
-            <span>·</span>
-            <span>4 collaborators online</span>
+          <div class="cursor cursor-b">
+            <svg viewBox="0 0 16 16" width="16" height="16"><path d="M1 1l6 13 2-5 5-2z" fill="currentColor"/></svg>
+            <span class="cursor-tag">Wanjiru</span>
           </div>
         </div>
       </div>
@@ -109,18 +110,13 @@
   </a>
 </section>
 
-<!-- SECTION 2: Capabilities (features + how it works) -->
+<!-- SECTION 2: Capabilities + Footer (one full-height screen) -->
 <section class="landing-capabilities" id="how-it-works">
   <div class="capabilities-inner">
-    <div class="section-header">
-      <p class="section-eyebrow">What you get</p>
-      <h2 class="section-title">Everything you need, nothing you don't</h2>
-      <p class="section-subtitle">Nine features. Three steps to your first board. No learning curve.</p>
-    </div>
-
     <div class="capability-grid">
       <div class="capability-col">
-        <h3 class="capability-title">What's inside</h3>
+        <p class="section-eyebrow">— CAPABILITIES</p>
+        <h2 class="capability-heading">What's inside<br />Flowdeck</h2>
         <div class="mini-feature-list">
           <div class="mini-feature" *ngFor="let feature of features">
             <div class="mini-feature-icon">{{ feature.icon }}</div>
@@ -132,182 +128,91 @@
         </div>
       </div>
 
-      <div class="capability-divider"></div>
-
-      <div class="capability-col">
-        <h3 class="capability-title">How it works</h3>
-        <div class="mini-steps">
-          <div class="mini-step" *ngFor="let step of howItWorks; let last = last">
-            <div class="mini-step-marker">
-              <span class="mini-step-number">{{ step.step }}</span>
-              <span class="mini-step-line" *ngIf="!last"></span>
-            </div>
-            <div>
-              <h4>{{ step.title }}</h4>
-              <p>{{ step.description }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SECTION 3: Contact + Footer (one screen) -->
-<section class="landing-contact" id="contact">
-  <div class="contact-content">
-    <div class="contact-inner">
-      <div class="contact-copy">
-        <p class="section-eyebrow">Contact</p>
-        <h2 class="contact-title">Want to bring your team onto Flowdeck?</h2>
-        <p class="contact-desc">
-          Have a question, need a demo, or want help planning your migration? Open a card below and we'll get back to you.
-        </p>
-
-        <div class="contact-note">
-          <p>
-            Ask us about the board that stayed perfectly in sync until 200 people joined at once.<br /><br />
-            Ask us about the drag-and-drop that worked everywhere except Safari.<br /><br />
-            Ask us about the cursor that kept moving five minutes after someone closed their laptop.
-          </p>
-        </div>
-
-        <ul class="contact-reassurance">
-          <li><span class="check">✓</span>We reply within one business day</li>
-          <li><span class="check">✓</span>Free 30-minute onboarding call</li>
-          <li><span class="check">✓</span>No sales pressure, ever</li>
-        </ul>
-      </div>
-
-      <div class="contact-panel">
-        <div class="contact-panel-bg"></div>
-
-        <!-- compose-card unchanged -->
-        <div class="compose-card">
-          <div class="compose-titlebar">
-            <div class="preview-dots"><span></span><span></span><span></span></div>
-            <span class="compose-label">Support Enquiry</span>
-            <span class="compose-column">→ Inbox</span>
-          </div>
-
-          <form class="compose-form" *ngIf="!talkSuccess()" (ngSubmit)="submitTalk()">
-            <div class="compose-row">
-            <div class="compose-field compose-field--title">
-              <label>Your name</label>
-              <input type="text" [(ngModel)]="talkForm.fullName" name="fullName" placeholder="Jane Doe" />
-            </div>
-
-            <div class="compose-field">
-              <label>Contact email</label>
-              <input type="email" [(ngModel)]="talkForm.email" name="email" placeholder="jane@example.com" />
-            </div>
-          </div>
-
-            <div class="compose-field">
-              <label>Label</label>
-              <div class="chip-picker">
-                <button
-                  type="button"
-                  *ngFor="let issue of issues()"
-                  class="chip-option"
-                  [class.chip-option--active]="talkForm.issueId === issue.id"
-                  (click)="talkForm.issueId = issue.id"
-                >
-                  {{ issue.name }}
-                </button>
+      <div class="capability-col capability-col--panel">
+        <div class="how-it-works-panel">
+          <div class="panel-decor"></div>
+          <h3 class="capability-title">How it works</h3>
+          <div class="mini-steps">
+            <div class="mini-step" *ngFor="let step of howItWorks; let last = last">
+              <div class="mini-step-marker">
+                <span class="mini-step-number" [class.mini-step-number--filled]="last">{{ step.step }}</span>
+                <span class="mini-step-line" *ngIf="!last"></span>
+              </div>
+              <div>
+                <h4>{{ step.title }}</h4>
+                <p>{{ step.description }}</p>
               </div>
             </div>
+          </div>
 
-            <div class="compose-field">
-              <label>Description</label>
-              <textarea [(ngModel)]="talkForm.message" name="message" rows="4" placeholder="Tell us how we can help..."></textarea>
+          <div class="productivity-callout">
+            <span class="callout-icon">🚀</span>
+            <div>
+              <p class="callout-title">Boost productivity by 40%</p>
+              <p class="callout-subtitle">Based on team performance data</p>
             </div>
-
-            <p class="form-status form-status-error" *ngIf="talkError()">{{ talkError() }}</p>
-
-            <label class="compose-checkbox">
-              <input
-                type="checkbox"
-                [checked]="privacyAgreed()"
-                (click)="handlePrivacyCheckboxClick($event)"
-                (change)="handlePrivacyCheckboxChange($event)"
-              />
-              <span>
-                I agree to the
-                <a href="#privacy" (click)="$event.preventDefault(); openInfoModal('privacy')">Privacy Policy</a>
-              </span>
-            </label>
-
-            <button type="submit" class="btn-compose-submit" [disabled]="talkSubmitting()">
-              <span>{{ talkSubmitting() ? 'Sending enquiry...' : 'Submit' }}</span>
-              <span class="compose-arrow">→</span>
-            </button>
-            <p class="compose-meta">Assigned to our support team · added to the Inbox column</p>
-          </form>
-
-          <div class="contact-success" *ngIf="talkSuccess()">
-            <span class="chip chip-mint">Done</span>
-            <p>Your enquiry has been send! We'll get back to you soon.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Footer, now the second row of this same full-height section -->
+  <!-- Footer -->
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-top">
         <div class="footer-brand-col">
           <div class="mini-footer-brand">
-            <span class="brand-mark">F</span>
+            <span class="brand-mark"><img src="/images/favicon.ico" alt="F"><img/></span>
             <span class="brand-text">Flowdeck</span>
           </div>
-          <p class="footer-tagline">Sync it. Share it. Build it. The workspace where your team's work stays in sync — for real.</p>
-          <div class="footer-status">
-            <span class="sync-dot"></span> All systems synced
+          <p class="footer-tagline">One shared space to organize, manage, and ship. Empowering teams to work as one from anywhere in the world.</p>
+          <div class="social-icons">
+            <a href="#" class="social-link" title="Twitter">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a href="#" class="social-link" title="GitHub">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 0 .192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            </a>
+            <a href="#" class="social-link" title="LinkedIn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
           </div>
         </div>
 
         <div class="footer-links-grid">
           <div class="footer-col">
             <h4>Product</h4>
-            <a href="#home">Overview</a>
-            <a href="#how-it-works">Features</a>
-            <a href="#how-it-works">How it works</a>
+            <a href="javascript:void(0)">Features</a>
+            <a href="javascript:void(0)">Integrations</a>
+            <a href="javascript:void(0)">Enterprise</a>
+            <a href="javascript:void(0)">Solutions</a>
           </div>
           <div class="footer-col">
-            <h4>Company</h4>
-            <a href="#home">About</a>
-            <a href="#careers" (click)="$event.preventDefault(); openInfoModal('careers')">Careers</a>
-            <a href="#contact">Contact</a>
+            <h4>Resources</h4>
+            <a href="javascript:void(0)">Documentation</a>
+            <a href="javascript:void(0)">API Reference</a>
+            <a href="javascript:void(0)">Community</a>
+            <a href="javascript:void(0)">Help Center</a>
           </div>
-          <div class="footer-col">
-            <h4>Legal</h4>
-            <a href="#privacy" (click)="$event.preventDefault(); openInfoModal('privacy')">Privacy Policy</a>
-            <a href="#terms" (click)="$event.preventDefault(); openInfoModal('terms')">Terms of Service</a>
-            <a href="#security" (click)="$event.preventDefault(); openInfoModal('security')">Security</a>
-          </div>
-          <div class="footer-col footer-col--social">
-            <h4>Connect</h4>
-            <div class="social-icons">
-              <a href="#" class="social-link" title="Twitter">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-              </a>
-              <a href="#" class="social-link" title="GitHub">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 0 .192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-              </a>
-              <a href="#" class="social-link" title="LinkedIn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-              </a>
-            </div>
+          <div class="footer-col footer-col--newsletter">
+            <h4>Stay Synced</h4>
+            <p>Get the latest updates and workflow tips delivered to your inbox.</p>
+            <form class="newsletter-form">
+              <input type="email" placeholder="Email address" />
+              <button type="button" class="btn-newsletter">Join</button>
+            </form>
           </div>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <p>© 2024 Flowdeck. All rights reserved.</p>
-        <p>Made with ❤️ for teams everywhere</p>
+        <p>© 2024 Flowdeck Technologies Inc. All rights reserved.</p>
+        <div class="footer-legal-links">
+          <a href="#privacy" (click)="$event.preventDefault(); openInfoModal('privacy')">Privacy Policy</a>
+          <a href="#terms" (click)="$event.preventDefault(); openInfoModal('terms')">Terms of Service</a>
+          <a href="javascript:void(0)">Cookie Settings</a>
+        </div>
       </div>
     </div>
   </footer>
