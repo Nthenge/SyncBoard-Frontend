@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService } from '../../../services/auth.service'; // adjust path to your project
 
 type ResetState = 'no-token' | 'form' | 'submitting' | 'success';
 
@@ -26,6 +26,7 @@ export class ResetPasswordComponent implements OnInit {
   submitError = '';
   showPassword = false;
   token = '';
+  currentYear = new Date().getFullYear();
 
   form: FormGroup;
 
@@ -35,6 +36,9 @@ export class ResetPasswordComponent implements OnInit {
     private router: Router,
     private authService: AuthService
   ) {
+    // Built here, not as a field initializer — field initializers run before
+    // constructor param properties (like `fb`) are assigned, so `this.fb` would
+    // still be undefined if this were declared inline above.
     this.form = this.fb.group(
       {
         newPassword: ['', [Validators.required, Validators.minLength(8)]],
@@ -82,6 +86,8 @@ export class ResetPasswordComponent implements OnInit {
       await this.authService.resetPassword(this.token, this.newPassword?.value);
       this.state = 'success';
     } catch (err: unknown) {
+      // Backend throws ResourceNotFoundException("User not found") for an
+      // invalid/expired reset token via jwtUtil.validateAndExtractEmailFromResetToken.
       this.state = 'form';
       const httpError = err as { error?: { message?: string } };
       this.submitError =

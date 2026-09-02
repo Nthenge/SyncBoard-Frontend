@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService } from '../../../services/auth.service'; // adjust path to your project
 
 type ConfirmState = 'loading' | 'success' | 'already-confirmed' | 'error';
 
@@ -15,6 +15,7 @@ type ConfirmState = 'loading' | 'success' | 'already-confirmed' | 'error';
 export class ConfirmAccountComponent implements OnInit {
   state: ConfirmState = 'loading';
   errorMessage = '';
+  currentYear = new Date().getFullYear();
 
   constructor(
     private route: ActivatedRoute,

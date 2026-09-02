@@ -1,11 +1,22 @@
-<div class="canvas">
-  <div class="mark">FlowDeck</div>
+<nav class="navbar">
+  <a routerLink="/" class="nav-brand">
+    <span class="brand-mark"><img src="/images/favicon.ico" alt="Flowdeck" /></span>
+    <span class="brand-text">Flowdeck</span>
+  </a>
+  <div class="nav-links"></div>
+  <div class="nav-actions">
+    <a routerLink="/" class="btn-nav-secondary">Back to home</a>
+  </div>
+</nav>
 
-  <div class="panel">
+<section class="auth-standalone">
+  <div class="auth-standalone-bg"></div>
+
+  <div class="auth-modal-panel">
     <ng-container [ngSwitch]="state">
 
       <div *ngSwitchCase="'loading'" class="status">
-        <span class="node node--pulse"></span>
+        <span class="mini-feature-icon icon-pulse"></span>
         <h1>Confirming your account</h1>
         <p>Give us a moment while we verify your link.</p>
       </div>
@@ -18,14 +29,14 @@
         </svg>
         <h1>Account confirmed</h1>
         <p>Your email is verified and your board is ready.</p>
-        <button class="cta" (click)="goToLogin()">Log in</button>
+        <button type="button" class="btn-hero-primary" (click)="goToLogin()">Log in</button>
       </div>
 
       <div *ngSwitchCase="'already-confirmed'" class="status">
-        <span class="node node--check" aria-hidden="true">✓</span>
+        <span class="callout-icon" aria-hidden="true">✓</span>
         <h1>Already confirmed</h1>
         <p>This account was verified earlier. Log in to keep going.</p>
-        <button class="cta" (click)="goToLogin()">Log in</button>
+        <button type="button" class="btn-hero-primary" (click)="goToLogin()">Log in</button>
       </div>
 
       <div *ngSwitchCase="'error'" class="status">
@@ -37,9 +48,19 @@
         </svg>
         <h1>We couldn't confirm that link</h1>
         <p>{{ errorMessage }}</p>
-        <button class="cta cta--ghost" (click)="goToLogin()">Back to login</button>
+        <button type="button" class="btn-nav-secondary" (click)="goToLogin()">Back to login</button>
       </div>
 
     </ng-container>
   </div>
-</div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-inner footer-inner--standalone">
+    <div class="mini-footer-brand">
+      <span class="brand-mark"><img src="/images/favicon.ico" alt="Flowdeck" /></span>
+      <span class="brand-text">Flowdeck</span>
+    </div>
+    <p class="footer-copyright">&copy; {{ currentYear }} Flowdeck Technologies Inc. All rights reserved.</p>
+  </div>
+</footer>

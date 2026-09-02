@@ -1,68 +1,42 @@
-// Tokens mirrored from the FlowDeck marketing site's design system.
-// Keep this in sync if the palette changes there — consider extracting a
-// shared _tokens.scss partial and @use-ing it from both places instead of
-// duplicating these values.
+// This component now reuses global classes from the site stylesheet:
+// .navbar, .nav-brand, .brand-mark, .nav-actions, .btn-nav-secondary,
+// .auth-modal-panel, .btn-hero-primary, .mini-feature-icon, .callout-icon,
+// .site-footer. Only the bits with no existing equivalent are defined here:
+// the standalone page layout (vs. the modal overlay), the loading pulse,
+// the connect/broken-link SVG motif, and small anchor/footer tweaks.
+//
+// $ink is duplicated here only for the dot-grid background formula
+// (rgba($ink, 0.06)) since Sass can't reach into the global stylesheet's
+// variables from a scoped component file without a shared @use'd partial.
 $ink: #0E121B;
-$paper: #F8F9FC;
-$surface: #ffffff;
-$lavender: #F1F1FD;
-$line: #E4E4E7;
-
 $accent: #004AC6;
-$accent-deep: #003A9E;
-
-$mint: #10B981;
-$mint-dark: #006C49;
-$mint-badge-bg: #E5F0EC;
-
 $coral: #FB7185;
-$coral-text: #C5364C;
 
-$muted: #64748B;
+// ---- Standalone auth layout (the modal panel, but as a full page) ----
 
-$font-display: 'Space Grotesk', -apple-system, sans-serif;
-$font-body: 'Inter', -apple-system, sans-serif;
-
-@mixin transition {
-  transition: all 0.25s ease;
-}
-
-:host {
-  display: block;
+.auth-standalone {
+  position: relative;
   min-height: 100vh;
-}
-
-.canvas {
-  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 40px;
-  padding: 24px;
-  background: $paper;
-  // Same dot treatment as .hero-bg on the marketing site.
+  padding: 7.5rem 1.5rem 3rem;
+  overflow: hidden;
+}
+
+.auth-standalone-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  // Same dot treatment as .hero-bg on the landing page.
   background-image: radial-gradient(rgba($ink, 0.06) 1px, transparent 1px);
   background-size: 22px 22px;
-  font-family: $font-body;
 }
 
-.mark {
-  font-family: $font-display;
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: -0.01em;
-  color: $ink;
-}
-
-.panel {
-  width: 100%;
-  max-width: 400px;
-  background: $surface;
-  border: 1px solid $line;
-  border-radius: 16px;
-  padding: 40px 32px;
-  box-shadow: 0 24px 60px -30px rgba($ink, 0.2);
+.auth-modal-panel {
+  position: relative;
+  z-index: 1;
 }
 
 .status {
@@ -73,82 +47,26 @@ $font-body: 'Inter', -apple-system, sans-serif;
   gap: 8px;
 }
 
-h1 {
-  font-family: $font-display;
-  font-size: 20px;
-  font-weight: 700;
-  color: $ink;
+.status h1 {
   margin: 12px 0 0;
-  line-height: 1.3;
 }
 
-p {
-  font-size: 14px;
-  color: $muted;
+.status p {
   margin: 0 0 8px;
-  line-height: 1.6;
 }
 
-.cta {
-  margin-top: 16px;
-  padding: 10px 20px;
-  background: $accent;
-  color: $surface;
-  border: none;
-  border-radius: 8px;
-  font-family: $font-body;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  @include transition;
+// ---- Loading state ----
 
-  &:hover {
-    background: $accent-deep;
-    transform: translateY(-2px);
-  }
-
-  &:focus-visible {
-    outline: 2px solid $accent;
-    outline-offset: 2px;
-  }
-
-  &--ghost {
-    background: $lavender;
-    color: $ink;
-
-    &:hover {
-      background: #e4e4f7;
-      transform: none;
-    }
-  }
-}
-
-.node {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: $accent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: $surface;
-  font-size: 14px;
-
-  &--pulse {
-    animation: pulse 1.4s ease-in-out infinite;
-  }
-
-  &--check {
-    background: $mint-badge-bg;
-    color: $mint-dark;
-    font-weight: 700;
-  }
+.icon-pulse {
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.15); opacity: 0.7; }
 }
+
+// ---- Connect / broken-link motif (success + error) ----
 
 .dot {
   fill: $accent;
@@ -174,8 +92,45 @@ p {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .node--pulse,
+  .icon-pulse,
   .link {
     animation: none;
   }
+}
+
+// ---- Small structural tweaks the shared classes don't cover ----
+
+a.nav-brand {
+  text-decoration: none;
+}
+
+.nav-actions a.btn-nav-secondary {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.footer-inner--standalone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+}
+
+// .mini-footer-brand is only styled globally when nested under
+// .footer-brand-col; redeclared here since this footer skips that wrapper.
+.mini-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'Space Grotesk', -apple-system, sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #ffffff;
+}
+
+.footer-copyright {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.78rem;
 }
