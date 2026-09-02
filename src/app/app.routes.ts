@@ -20,7 +20,7 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'confirm-account',loadComponent: () => import('./components/auth/confirm-account/confirm-account.component').then(m => m.ConfirmAccountComponent)},
   { path: 'forgot-password', component: ForgotPasswordComponent },
-  { path: 'reset-password/:token', component: ResetPasswordComponent },
+  { path: 'reset-password', loadComponent: () => import('./components/auth/reset-password/reset-password.component').then(m => m.ResetPasswordComponent) },
   { path: 'accept-invite/:token', component: EmailConfirmComponent },
   { path: 'delete-account', component: DeleteAccountComponent, canActivate: [authGuard] },
   { path: 'workspaces', component: WorkspacesComponent, canActivate: [authGuard] },
