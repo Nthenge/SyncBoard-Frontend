@@ -278,6 +278,87 @@
   </div>
 }
 
+@if (authModal() === 'reset') {
+  <div class="auth-overlay">
+    <div class="auth-modal-panel" (click)="$event.stopPropagation()">
+      <ng-container [ngSwitch]="resetState()">
+
+        <div *ngSwitchCase="'no-token'" class="status">
+          <svg class="broken" width="72" height="40" viewBox="0 0 72 40" fill="none" aria-hidden="true">
+            <circle class="dot dot--a" cx="14" cy="20" r="7"/>
+            <circle class="dot dot--b" cx="58" cy="20" r="7"/>
+            <line class="link link--broken" x1="21" y1="20" x2="34" y2="20"/>
+            <line class="link link--broken" x1="38" y1="20" x2="51" y2="20"/>
+          </svg>
+          <h1>This reset link is missing its token</h1>
+          <p>Request a new link and open it directly from the email.</p>
+          <button type="button" class="btn-hero-primary" (click)="authModal.set('forgot')">Request new link</button>
+        </div>
+
+        <div *ngSwitchCase="'success'" class="status">
+          <svg class="connect" width="72" height="40" viewBox="0 0 72 40" fill="none" aria-hidden="true">
+            <circle class="dot dot--a" cx="14" cy="20" r="7"/>
+            <circle class="dot dot--b" cx="58" cy="20" r="7"/>
+            <line class="link" x1="21" y1="20" x2="51" y2="20"/>
+          </svg>
+          <h1>Password updated</h1>
+          <p>Log in with your new password.</p>
+          <button type="button" class="btn-hero-primary" (click)="authModal.set('login')">Log in</button>
+        </div>
+
+        <form *ngSwitchDefault class="status" [formGroup]="resetForm" (ngSubmit)="submitResetPassword()" novalidate>
+          <span class="mini-feature-icon" aria-hidden="true">🔒</span>
+          <h1>Set a new password</h1>
+          <p>Choose something you haven't used on Flowdeck before.</p>
+
+          <div class="field">
+            <label for="newPassword">New password</label>
+            <div class="field-row">
+              <input
+                [type]="resetShowPassword() ? 'text' : 'password'"
+                id="newPassword"
+                formControlName="newPassword"
+                autocomplete="new-password"
+                [attr.aria-invalid]="resetNewPassword?.invalid && resetNewPassword?.touched"
+              />
+              <button type="button" class="toggle" (click)="toggleResetPasswordVisibility()">
+                {{ resetShowPassword() ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <p class="hint" *ngIf="resetNewPassword?.touched && resetNewPassword?.hasError('required')">
+              Enter a new password.
+            </p>
+            <p class="hint" *ngIf="resetNewPassword?.touched && resetNewPassword?.hasError('minlength')">
+              Use at least 8 characters.
+            </p>
+          </div>
+
+          <div class="field">
+            <label for="confirmPassword">Confirm password</label>
+            <input
+              [type]="resetShowPassword() ? 'text' : 'password'"
+              id="confirmPassword"
+              formControlName="confirmPassword"
+              autocomplete="new-password"
+              [attr.aria-invalid]="resetConfirmPassword?.touched && resetForm.hasError('mismatch')"
+            />
+            <p class="hint" *ngIf="resetConfirmPassword?.touched && resetForm.hasError('mismatch')">
+              Passwords don't match.
+            </p>
+          </div>
+
+          <p class="hint hint--error" *ngIf="resetSubmitError()">{{ resetSubmitError() }}</p>
+
+          <button type="submit" class="btn-hero-primary field-submit" [disabled]="resetState() === 'submitting'">
+            {{ resetState() === 'submitting' ? 'Updating…' : 'Update password' }}
+          </button>
+        </form>
+
+      </ng-container>
+    </div>
+  </div>
+}
+
 @if (infoModal()) {
   <div class="info-overlay" (click)="closeInfoModal()">
     <div class="info-modal-panel" (click)="$event.stopPropagation()">

@@ -7,24 +7,51 @@ import { FormsModule } from '@angular/forms';
 import { TalkService } from '../../services/talk.service';
 import { Issue } from '../../models/board.models';
 import { LoginComponent } from '../auth/login/login.component';
+import { FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { RegisterComponent } from '../auth/register/register.component';
 import { ForgotPasswordComponent } from '../auth/forgot-password/forgot-password.component';
 
 type InfoModalType = 'privacy' | 'terms' | 'security' | 'careers' | null;
 
+function passwordsMatchValidator(): ValidatorFn {
+  return (group): ValidationErrors | null => {
+    const pass = group.get('newPassword')?.value;
+    const confirm = group.get('confirmPassword')?.value;
+    return pass && confirm && pass !== confirm ? { mismatch: true } : null;
+  };
+}
+
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, LoginComponent, RegisterComponent, ForgotPasswordComponent],
+  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, LoginComponent, RegisterComponent, ForgotPasswordComponent],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })
+
 export class LandingComponent implements OnInit {
+
+  constructor(private fb: FormBuilder) {
+  this.resetForm = this.fb.group(
+    {
+      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', Validators.required]
+    },
+    { validators: passwordsMatchValidator() }
+  );
+}
+
   private talkService = inject(TalkService);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
 
-  authModal = signal<'login' | 'register' | 'forgot' | 'confirm' | null>(null);
+  authModal = signal<'login' | 'register' | 'forgot' | 'confirm' | 'reset' |null>(null);
+  resetState = signal<'no-token' | 'form' | 'submitting' | 'success'>('form');
+  resetSubmitError = signal('');
+  resetShowPassword = signal(false);
+  resetToken = '';
+
+  resetForm: FormGroup;
 
   confirmState = signal<'loading' | 'already-confirmed' | 'success' | 'error'>('loading');
   confirmErrorMessage = signal('');
@@ -34,6 +61,7 @@ export class LandingComponent implements OnInit {
 
   issues = signal<Issue[]>([]);
   registerPrefillEmail = signal('');
+  
 
   onSwitchToRegister(email: string): void {
     this.registerPrefillEmail.set(email || '');
@@ -64,8 +92,14 @@ export class LandingComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    const token = this.route.snapshot.queryParamMap.get('token');
-    if (token) {
+     const token = this.route.snapshot.queryParamMap.get('token');
+    const isResetPassword = this.route.snapshot.url.some(seg => seg.path === 'reset-password');
+
+    if (token && isResetPassword) {
+      this.resetToken = token;
+      this.authModal.set('reset');
+      this.resetState.set('form');
+    } else if (token) {
       this.authModal.set('confirm');
       this.confirmAccount(token);
     }
@@ -76,11 +110,45 @@ export class LandingComponent implements OnInit {
         },
         error: () => {}
     });
-}
+  }
 
   openInfoModal(type: Exclude<InfoModalType, null>): void {
     this.infoModal.set(type);
   }
+
+  get resetNewPassword() {
+  return this.resetForm.get('newPassword');
+}
+
+get resetConfirmPassword() {
+  return this.resetForm.get('confirmPassword');
+}
+
+toggleResetPasswordVisibility(): void {
+  this.resetShowPassword.set(!this.resetShowPassword());
+}
+
+async submitResetPassword(): Promise<void> {
+  this.resetSubmitError.set('');
+
+  if (this.resetForm.invalid) {
+    this.resetForm.markAllAsTouched();
+    return;
+  }
+
+  this.resetState.set('submitting');
+
+  try {
+    await this.authService.resetPassword(this.resetToken, this.resetNewPassword?.value);
+    this.resetState.set('success');
+  } catch (err: unknown) {
+    this.resetState.set('form');
+    const httpError = err as { error?: { message?: string } };
+    this.resetSubmitError.set(
+      httpError?.error?.message || 'This reset link is invalid or has expired. Request a new one.'
+    );
+  }
+}
 
   closeInfoModal(): void {
     this.infoModal.set(null);
