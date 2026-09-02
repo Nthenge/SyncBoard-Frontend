@@ -369,7 +369,8 @@ async fetchAvatarAsBlobUrl(url: string): Promise<string> {
             await firstValueFrom(
                 this.http.post(
                     `${environment.apiUrl}${environment.api.basePath}${environment.api.endpoints.auth.resetPassword}`,
-                    { token, newPassword }
+                    null,
+                    { params: { token, newPassword } }
                 )
             );
         } catch (error: any) {
