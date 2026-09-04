@@ -49,7 +49,7 @@
         <p class="success-message">Confirmation email sent, check your inbox.</p>
       } @else {
         <a class="resend-link" (click)="resendConfirmation()" [class.disabled]="resendState() === 'sending'">
-          {{ resendState() === 'sending' ? 'Sending…' : 'Resend confirmation email' }}
+          {{ resendState() === 'sending' ? 'Sending…' : 'Resend confirmation email.' }}
         </a>
         @if (resendError()) { <p class="error-message">{{ resendError() }}</p> }
       }
