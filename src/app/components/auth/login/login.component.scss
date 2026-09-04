@@ -225,6 +225,28 @@ button[type="submit"] {
   }
 }
 
+.resend-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: $accent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  @include transition;
+
+  &:hover:not(.disabled) {
+    color: $accent-deep;
+    text-decoration: underline;
+  }
+
+  &.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
 .error-message {
   background: rgba(251, 113, 133, 0.12);
   color: #C5364C;
